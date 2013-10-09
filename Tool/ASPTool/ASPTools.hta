@@ -1,0 +1,173 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312" />
+<meta name="author" content="柳永法,yongfa365,http://www.yongfa365.com" />
+<title>ASP辅助工具</title>
+<style>body{ font-size:12px}</style>
+<HTA:APPLICATION 
+     ID="ASPTools" 
+     APPLICATIONNAME="ASPTools"
+     SCROLL="no"
+     SINGLEINSTANCE="yes"
+     WINDOWSTATE="normal"
+>
+</head>
+<body>
+<div>
+<input type="file" id="txtFile" onchange="CreateTableSelect('ACCESS')" style="display:none" />
+IP：<input type="text" name="IP" size="16" style="border:1px solid green" value="." />
+登录名：<input type="text" name="UserID" size="10" style="border:1px solid green" value="sa" />
+密码：<input type="password" name="pwd" size="10" style="border:1px solid green" value="jhsb_fxzx_jsz" />
+数据库名：<input type="text" name="dbname" size="10" style="border:1px solid green" value="jh-shop" /><br />
+<input name="button2"  type="button" id="button2" style="border:1px solid green" onclick="CreateTableSelect('MSSQL')" value="连接SQL数据库" />
+<input type="button" id="btnFromFile" onclick="txtFile.click()" value="连接ACCESS数据库" style="border:1px solid green" />
+<span id="Tables" ></span>
+
+	<hr />
+	模板：
+	<input type="text" id="opt" value="" size="40" />
+	<select size="1" id="fz" onchange="opt.value=this.value" style="width:200px"></select>
+	<input name="button" type="button" id="button" onclick="c()" value="转换" style="border:1px solid green">
+	<hr />
+	<textarea id="s" rows="10" cols="80" style="width:98%"></textarea>
+	<input type="button"  onclick="MadeSQL()" value="生成SQL语句" style="border:1px solid green" />
+	<textarea id="d" rows="10" cols="80" style="width:98%"></textarea>
+</div>
+
+
+<pre id="SQLDEMO" style="display:none" intro="通用建表结构">
+--通用建表结构
+Create Table [dbo].[tablename] (
+   [ID] int primary key identity(1,1),--ID，主键，自动号
+   [txtTitle] varchar(255),--标题
+   [txtContent] text,--内容
+   [PutTime] datetime Default (getdate()),--提交时间
+   [ModiTime] datetime Default (getdate()),--修改时间
+   [Hits] int Default (0),--点击数
+   [Flags] int Default (0) ,--标识
+   [OrderID] int Default (0),--排序号
+  )
+</pre>
+
+<pre id="sDemo" style="display:none" intro="初始源测试数据">
+UserName
+Password
+Sex
+TrueName
+Age
+Tel
+MSN
+QQ
+Email
+</pre>
+
+<pre id="fzDemo" style="display:none" intro="辅助输入">
+辅助输入
+rs("$1") = Request("$1")
+rs("$1") = SafeRequest("$1")
+$1 = Request("$1")
+$1 = SafeRequest("$1")
+<tr><td>$1：</td><td><input type="text" name="$1" size="20"></td></tr>
+</pre>
+
+<hr />
+Made by <a href="http://www.yongfa365.com/">www.yongfa365.com</a> 建议查看源文件然后保存为ASPTools.hta然后再运行
+
+
+<script language="VBScript" type="text/vbscript">
+self.Focus()
+self.ResizeTo 620, 520
+
+'初始化数据
+s.Value = sDemo.innerHTML
+
+fzs = Split(fzDemo.innerHTML, vbCrLf)
+For Each optTemp In fzs
+    Set o = document.createElement("Option")
+    o.text = optTemp
+    o.Value = optTemp
+    fz.Add o
+Next
+
+opt.Value = fz.options(1).Value
+
+
+'程序运行时的一些函数
+
+Function c()
+    ss = Split(s.Value, vbCrLf)
+    For Each sss in ss
+        If sss<>"" Then Str = Str & Replace(opt.Value, "$1", sss) & vbCrLf
+    Next
+    d.Value = Str
+End Function
+
+Dim xCat '定义全局变量，避免重复链接数据库。
+
+Function CreateTableSelect(dbType)
+    Set xCat = CreateObject("ADOX.Catalog")
+    If dbType = "ACCESS" Then
+        xCat.ActiveConnection = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" & txtFile.Value
+    ElseIf dbType = "MSSQL" Then
+        xCat.ActiveConnection = "Provider=SQLOLEDB.1; Persist Security Info=True; Data Source=" & IP.Value & "; Initial Catalog="& dbname.Value &"; User ID="& UserID.Value &"; Password=" & pwd.Value
+    End If
+    
+    For Each xTable in xCat.Tables
+        tableType = xTable.Type
+        If tableType = "TABLE" Then
+            TablesS = TablesS & "<option value='"& xTable.Name &"'>"& xTable.Name &"</option>"
+        End If
+    Next
+    Tables.innerHTML = "　<select name='NowTables' onchange='CreateFieldSelect(""" & dbType & """)'><option>==请选择表名==</option>" & TablesS & "</select>"
+    
+End Function
+
+
+
+Function CreateFieldSelect(dbType)
+    Dim Item
+    For Each xTable in xCat.Tables
+        If xTable.Name = NowTables.Value Then
+            For Each Item in xTable.Columns
+                Str = Str + Item.Name & vbCrLf
+            Next
+            Exit For
+        End If
+    Next
+    s.Value = Left(Str, Len(Str) -2)
+End Function
+
+Function MadeSQL()
+    yongfa365Fields = Split(s.Value, vbCrLf)
+    yongfa365Code2 = ""
+    For Each sql in yongfa365Fields
+        If sql<>"" Then strSQL = strSQL & "   [" & sql & "] varchar(50),"
+    Next
+    strSQL = Left(strSQL, Len(strSQL) -1)
+    yongfa365Code2 = "Create Table TableName(" & vbCrLf & Replace(strSQL, ",", "," & vbCrLf) & vbCrLf & ")" & vbCrLf & vbCrLf
+    
+    TempValue = Join(yongfa365Fields, " & ""','"" & objItem.")
+    yongfa365Code2 = yongfa365Code2 & "Conn.Execute ""insert into Info (" & Join(yongfa365Fields, ",") & ") values ('"" & objItem." & TempValue & " & ""')""" & vbCrLf & vbCrLf & vbCrLf
+    
+    TempValue = Join(yongfa365Fields, """) & ""','"" & rs(""")
+    yongfa365Code2 = yongfa365Code2 & "Conn.Execute ""insert into Info (" & Join(yongfa365Fields, ",") & ") values ('"" & rs(""" & TempValue & """) & ""')""" & vbCrLf & vbCrLf & vbCrLf
+    
+    TempValue = Join(yongfa365Fields, " & ""','"" & ")
+    yongfa365Code2 = yongfa365Code2 & "Conn.Execute ""insert into Info (" & Join(yongfa365Fields, ",") & ") values ('"" & " & TempValue & " & ""')""" & vbCrLf & vbCrLf & vbCrLf
+    
+    d.Value = SQLDEMO.innerHTML & String(2, vbCrLf) & yongfa365Code2
+End Function
+
+Function reReplace(Str, restrS, restrD)
+    Set re = New RegExp
+    re.IgnoreCase = True
+    re.Global = True
+    re.Pattern = restrS
+    reReplace = re.Replace(Str, restrD)
+End Function
+
+
+</script>
+</body>
+</html>

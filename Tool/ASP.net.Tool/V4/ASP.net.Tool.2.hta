@@ -1,0 +1,183 @@
+<!DOCTYPE Html PUBLIC "-//W3C//DTD XHtml 1.0 Transitional//EN" "http://www.w3.org/TR/xHtml1/DTD/xHtml1-transitional.dtd">
+<Html xmlns="http://www.w3.org/1999/xHtml">
+<head>
+<meta http-equiv="Content-Type" content="text/Html; charset=gb2312" />
+<title>柳永法 ASP.net 生成工具</title>
+</head>
+
+<body>
+<div>
+模板：
+<input type="text" id="TemplateName" value="Template" />
+
+文件名：
+<input type="text" id="FileName" value="FileName" />
+
+<br /><br />
+表名：<input type="text" id="TableName" value="TableName" />
+
+
+</div>
+<div>字段：
+  <textarea name="textarea" id="TableFields" cols="50" rows="10" ></textarea><br />
+  中文字段名|英文字段名（一行一行）
+</div>
+<div>
+  <input type="submit" name="Submit" value="提交" onclick="Start()" />
+</div>
+
+<!--初始化开始-->
+<pre id="sDemo" style="display:none" intro="初始源测试数据">
+用户名|UserName
+密码|Password
+性别|Sex
+真实姓名|TrueName
+年龄|Age
+电话|Tel
+MSN|MSN
+QQ|QQ
+Email|Email
+</pre>
+<!--初始化结束-->
+
+<!--脚本开始-->
+
+<script language="VBScript" type="text/vbscript">
+'self.Focus()
+'self.ResizeTo 600, 400
+
+'初始化数据
+TableFields.Value = sDemo.innerHtml
+
+
+Function Start()
+	CreateWeb
+	MsgBox "OK"
+End Function
+
+
+
+Function CreateWeb()
+EditHtml=""
+ShowHtml=""
+HeaderTextHtml=""
+ListHtml=""
+
+
+EditCode=""
+ShowCode=""
+btnSave=""
+NowFields=""
+FieldsValue=""
+UpdateFields=""
+SearchCodeURL=""
+SearchCode=""
+SearchCodeTemp=        "txt$Field$.Text = Request[""txt$Field$""];" & vbcrlf &"        if (!string.IsNullOrEmpty(txt$Field$.Text.Trim()))"& vbcrlf &"        {"& vbcrlf &"            txtSQL += "" and $Field$ like'%"" + txt$Field$.Text.Trim() + ""%'"";" & vbcrlf &"        }"
+
+
+Fields=Split(TableFields.value,vbCrLf)
+for Each Field in Fields
+	if len(Field)>=1 then
+if instr(Field,"|")>0 then 
+		Fs=Split(Field,"|")
+else
+		Fs=Split(Field,"	")
+end if
+		EditHtml 	= EditHtml & vbcrlf & "        <tr><td>" & Fs(0) & "：</td><td><asp:TextBox ID=""txt" & Fs(1) & """ runat=""server"" Width=""183px""></asp:TextBox></td></tr>"
+		ShowHtml	= ShowHtml & vbcrlf & "        <tr><td>" & Fs(0) & "：</td><td><asp:Label ID=""lblShow" & Fs(1) & """ runat=""server"" ></asp:Label></td></tr>"
+		HeaderTextHtml	= HeaderTextHtml & vbcrlf & "<th>" & Fs(0) & "</th>"
+		ListHtml	= ListHtml & vbcrlf & "<td><%#Eval(""" & Fs(1) & """) %></td>"
+		SearchHtml 	= SearchHtml & vbcrlf & "" & Fs(0) & "：<asp:TextBox ID=""txt" & Fs(1) & """ runat=""server""></asp:TextBox> "
+		ValidatorHtml 	= ValidatorHtml & vbcrlf & "  if (theForm.txt" & Fs(1) & ".value == '')" & vbcrlf & "  {" & vbcrlf & "    alert('" & Fs(0) & " 不能为空！');" & vbcrlf & "    theForm.txt" & Fs(1) & ".focus();" & vbcrlf & "    return false;" & vbcrlf & "  }"
+
+		EditCode	= EditCode & vbcrlf & "        txt" & Fs(1) & ".Text = drv[""" & Fs(1) & """].ToString();	//" & Fs(0)
+		ShowCode	= ShowCode & vbcrlf & "        lblShow" & Fs(1) & ".Text = drv[""" & Fs(1) & """].ToString();	//" & Fs(0)
+		SearchCodeURL	= SearchCodeURL & vbcrlf & "            + ""&txt"  & Fs(1) & "="" + Server.HtmlEncode(Request.Form[""txt" & Fs(1) & """])	//" & Fs(0)
+		SearchCode	= SearchCode & vbcrlf & replace(SearchCodeTemp,"$Field$",Fs(1))
+		btnSave		= btnSave & vbcrlf & "        new SqlParameter(""@" & Fs(1) & """,  txt" & Fs(1) & ".Text.Trim()),	//" & Fs(0)
+		NowFields	= NowFields & ",[" & Fs(1) & "]"
+		FieldsValue	= FieldsValue & ",@" & Fs(1)
+		UpdateFields	= UpdateFields & ",[" & Fs(1) & "] = @" & Fs(1)
+	end if
+next
+
+
+btnSave = "SqlParameter[] parms ={" & vbcrlf & btnSave & vbcrlf & "new SqlParameter(),};"
+
+NowFields=Mid(NowFields,2,len(NowFields))
+FieldsValue=Mid(FieldsValue,2,len(FieldsValue))
+UpdateFields=Mid(UpdateFields,2,len(UpdateFields))
+
+
+'===================================================================================================
+
+TemplateAspx=ReadFromFile(TemplateName.value & ".aspx", "utf-8")
+TemplateAspxCs=ReadFromFile(TemplateName.value & ".aspx.cs", "utf-8")
+
+TemplateAspx=replace(TemplateAspx,"$FileName$",FileName.value)
+TemplateAspx=replace(TemplateAspx,"$TableName$",TableName.value)
+
+TemplateAspx=replace(TemplateAspx,"$EditHtml$",EditHtml)
+TemplateAspx=replace(TemplateAspx,"$ShowHtml$",ShowHtml)
+TemplateAspx=replace(TemplateAspx,"$HeaderTextHtml$",HeaderTextHtml)
+TemplateAspx=replace(TemplateAspx,"$ListHtml$",ListHtml)
+TemplateAspx=replace(TemplateAspx,"$SearchHtml$",SearchHtml)
+TemplateAspx=replace(TemplateAspx,"$ValidatorHtml$",ValidatorHtml)
+
+
+TemplateAspxCs=replace(TemplateAspxCs,"$FileName$",FileName.value)
+TemplateAspxCs=replace(TemplateAspxCs,"$TableName$",TableName.value)
+
+TemplateAspxCs=replace(TemplateAspxCs,"//$EditCode$",EditCode)
+TemplateAspxCs=replace(TemplateAspxCs,"//$ShowCode$",ShowCode)
+TemplateAspxCs=replace(TemplateAspxCs,"//$SearchCode$",SearchCode)
+TemplateAspxCs=replace(TemplateAspxCs,"//$SearchCodeURL$",SearchCodeURL)
+
+
+TemplateAspxCs=replace(TemplateAspxCs,"//$btnSave$",btnSave)
+TemplateAspxCs=replace(TemplateAspxCs,"$Fields$",NowFields)
+TemplateAspxCs=replace(TemplateAspxCs,"$FieldsValue$",FieldsValue)
+TemplateAspxCs=replace(TemplateAspxCs,"$UpdateFields$",UpdateFields)
+
+WriteToFile FileName.value & ".aspx", TemplateAspx,"utf-8"
+WriteToFile FileName.value & ".aspx.cs", TemplateAspxCs,"utf-8"
+
+End Function
+
+'<---------------------------------------Adodb.Stream操作--------------------------------------->
+'按指定编码读取文件
+Function ReadFromFile(FileUrl, CharSet)
+    Dim Str
+    Set stm = CreateObject("Adodb.Stream")
+    stm.Type = 2
+    stm.mode = 3
+    stm.charset = CharSet
+    stm.Open
+    stm.loadfromfile FileUrl
+    Str = stm.readtext
+    stm.Close
+    Set stm = Nothing
+    ReadFromFile = Str
+End Function
+
+'按指定编码存储文件
+Function WriteToFile (FileUrl, Str, CharSet)
+    Set stm = CreateObject("Adodb.Stream")
+    stm.Type = 2
+    stm.mode = 3
+    stm.charset = CharSet
+    stm.Open
+    stm.WriteText Str
+    stm.SaveToFile FileUrl, 2
+    stm.flush
+    stm.Close
+    Set stm = Nothing
+End Function
+'<---------------------------------------/ Adodb.Stream操作------------------------------------->
+
+
+
+</script>
+<!--脚本结束-->
+</body>
+</Html>
