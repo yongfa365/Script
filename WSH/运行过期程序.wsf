@@ -1,0 +1,42 @@
+<job id="运行过期程序">
+<script language="javascript">
+/**************************************************************
+运行过期程序.wsf  [written by xlez]
+date: 2006-9-15
+
+更改日期(程序试用期内的时间)及要运行文件的路径
+可以把要运行的程序加到file里(注意路径)，
+也可以把程序拖到这个脚本上
+*************************************************************/
+var oldDate='2004-11-11'	//更改日期
+var file=["c:\\windows\\notepad.EXE","RegCool.EXE"]	//自己扩展数组可以运行多个程序
+
+
+function x()
+{var w=new ActiveXObject("WScript.shell")
+ var i=0
+ var d=new Date()
+ var today=d.getYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()
+ if(today==oldDate) {WScript.sleep(1000);x();return}
+ w.run("cmd.exe /c date "+oldDate,false,1)
+ WScript.sleep(500)
+
+ if(WScript.Arguments.length>0)
+ {for(i=0;i<WScript.Arguments.length;i++)
+	w.run('"'+WScript.Arguments(i)+'"')
+ }
+ else
+ {var fso = new ActiveXObject("Scripting.FileSystemObject");
+	for(i=0;i<file.length;i++)
+	{if(fso.fileExists(file[i]))	w.run('"'+file[i]+'"')
+	}
+  fso=null
+ }
+ WScript.sleep(3000)
+ w.run("cmd.exe /c date "+today,false,1)
+}
+
+x()
+</script>
+</job>
+ 

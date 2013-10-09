@@ -1,0 +1,347 @@
+<TITLE>网易文件摄取</TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<HTA:APPLICATION  
+ ID="MyhyliApp"  
+ APPLICATIONNAME="设置程序"  
+ VERSION="1.0"  
+ SCROLL="no"  
+ INNERBORDER="no"  
+ CONTEXTMENU="no"  
+ CAPTION="yes"  
+ SHOWINTASKBAR="yes"  
+ SINGLEINSTANCE="yes"  
+ SYSMENU="yes"  
+ WINDOWSTATE="normal" 
+ NAVIGABLE="yes" 
+ />
+<style type="text/css"> 
+<!-- 
+.TT1 { font-family: "隶书"; 
+ font-size: 24px; 
+ font-weight: bold; 
+} 
+.title { 
+} 
+.info { 
+ font-family: "隶书"; 
+ font-size: 16px; 
+ color: #FF0000; 
+ font-weight: bold; 
+} 
+.separator { width:100%; 
+ margin:2px; 
+ margin-top:-4px; 
+ height:12px; 
+ overflow:hidden; 
+} 
+.list { height: 80px; 
+ width: 100%; 
+ background-color: #E3EFF9; 
+} 
+.s_button { 
+ background-color: #FFCC99; 
+ position: static; 
+ text-align: center; 
+ vertical-align: middle; 
+ padding: 1px; 
+ color: #0033CC; 
+ border: 1px solid #996633; 
+ width: 100%; 
+} 
+.grid1 { 
+ font-family: "隶书"; 
+ font-size: 16px; 
+ background-color: #006699; 
+ background-position: center center; 
+ text-align: center; 
+ vertical-align: middle; 
+ height: 100%; 
+ width: 100%; 
+ color: #00FF99; 
+} 
+.grid2 { 
+ font-family: "宋体"; 
+ text-align: left; 
+ vertical-align: middle; 
+ height: 100%; 
+ width: 100%; 
+ font-size: 12px; 
+} 
+.grid3 { 
+ text-align: center; 
+ vertical-align: middle; 
+ height: 100%; 
+ width: 100%; 
+} 
+.preview { 
+ position:absolute; 
+ width:140px; 
+ height:140px; 
+ z-index:1; 
+ left: 301px; 
+ top: 61px; 
+ overflow: visible; 
+ border-top-color: #FF0000; 
+ border-right-color: #FF0000; 
+ border-bottom-color: #FF0000; 
+ border-left-color: #FF0000; 
+ background-color: #FF9966; 
+ margin: 1px; 
+ padding: 1px; 
+ visibility: hidden; 
+} 
+.STYLE2 { 
+ color: #00FF00; 
+ font-weight: bold; 
+ font-family: "隶书"; 
+ font-size: 14px; 
+} 
+--> 
+</style>
+<div class="separator">
+  <hr>
+</div>
+<table width="100%" height="4%" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td colspan="2" align="center" valign="middle" id=menubar onselectstart="return false"><span class="TT1" id="consume">网易图片文件一览表</span> </td>
+  </tr>
+</table>
+<div class="separator">
+  <hr>
+</div>
+<table width="100%" height="415" border="1">
+  <tr>
+    <td width="81%" height="16" rowspan="8" valign="top" bgcolor="#FFFFFF" style="border-style: solid; border-color: #000080"><div class="info" id=list style="width:100%;height:405; overflow-y: auto; border: solid 1 gray;"></div></td>
+    <td height="16" colspan="2" align="center" valign="middle" bordercolor="#FF0000" bgcolor="#000080" style="border-style: solid; border-color: #000080"><div class="preview" id="preview">
+        <p> </p>
+      </div>
+      <span class="STYLE2"> 信息公布</span></td>
+  </tr>
+  <tr>
+    <td height="182" colspan="2" align="left" valign="top" bgcolor="#FFFFFF" class="info" style="border-style: solid; border-color: #000080"><div class="info" id="infotext" style="width:100%;height:177; overflow-y: auto">
+        <p>本程序可以自由下载网易图片..</p>
+        <p> </p>
+      </div></td>
+  </tr>
+  <tr>
+    <td height="33" colspan="2" align="center" valign="middle" bgcolor="#FFFFFF" class="info" style="border-style: solid; border-color: #000080"><input name="add" type="submit" class="s_button" id="add" onclick="show()" value="取文件信息" /></td>
+  </tr>
+  <tr>
+    <td height="33" align="center" valign="middle" bgcolor="#FFFFFF" style="border-style: solid; border-color: #000080"><select name="Atype" id="Atype" onchange="changevalue()">
+        <option value="jpg">彩图</option>
+        <option value="gif">动画</option>
+      </select></td>
+    <td height="33" align="center" valign="middle" bgcolor="#FFFFFF" style="border-style: solid; border-color: #000080"><select name="imagetype" id="imagetype">
+        <option selected="selected">图片类型</option>
+        <option>全部</option>
+        <option value="90">绝色风光</option>
+        <option value="91">四季花语 </option>
+        <option value="89">海底世界 </option>
+        <option value="34">绝色美女 </option>
+        <option value="198">都市丽人</option>
+        <option value="200">手绘美女</option>
+      </select></td>
+  </tr>
+  <tr>
+    <td height="33" colspan="2" align="center" valign="middle" bgcolor="#FFFFFF" style="border-style: solid; border-color: #000080"><input name="del2" type="submit" class="s_button" id="del2" onclick="downloadfile()" value="下载选定项" /></td>
+  </tr>
+  <tr>
+    <td height="33" colspan="2" align="center" valign="middle" bgcolor="#FFFFFF" style="border-style: solid; border-color: #000080"><input name="del" type="submit" class="s_button" id="del" onclick="tb_del()" value="删除选定项" /></td>
+  </tr>
+  <tr>
+    <td width="5%" height="25" align="center" valign="middle" bgcolor="#000080" class="STYLE2" style="border-style: solid; border-color: #000080">从 </td>
+    <td width="14%" bgcolor="#FFFFFF" valign="middle" align="center" style="border-style: solid; border-color: #000080"><a title="在此处输入起始页数">
+      <input name="start1" type="text" id="start1" value="1" size="10" />
+      </a></td>
+  </tr>
+  <tr>
+    <td height="26" align="center" valign="middle" bgcolor="#000080" class="STYLE2" style="border-style: solid; border-color: #000080">到</td>
+    <td height="26" align="center" valign="middle" bgcolor="#FFFFFF" style="border-style: solid; border-color: #000080"><a title="在此处输入结束页数">
+      <input name="start2" type="text" id="start2" size="10" value="1"/>
+      </a></td>
+  </tr>
+</table>
+<script language="vbscript"> 
+Public fileext
+str1 = "<tr><td><span class='grid1'><input type=checkbox id='sall' onclick='selectall()'>全都选</span></td>"
+str1 = str1& "<td><span class='grid1'>预览</span></td>"
+str1 = str1 & "<td><span class='grid1'>文件路径</span></td>"
+str1 = str1 & "<td><span class='grid1'>文件名称</span></td></tr>"
+
+Sub Window_onLoad
+    window.resizeTo 750, 515
+    ileft = (window.screen.Width -750) / 2
+    itop = (window.screen.height -515) / 2
+    window.moveTo ileft, itop
+End Sub
+
+
+Function connect(num)
+    Dim imageinfo, Length
+    fileext = Atype.options(Atype.selectedindex).Value
+    imgtype = imagetype.options(imagetype.selectedindex).Value
+    imgtypenum = Atype.selectedindex
+    url = "http://mms.163.com/new_web/cm_lv2_pic.jsp?catID="&imgtype&"&ord=dDate&page="&num&"&type="&imgtypenum&"&key="
+    imageurl = "http://mmsimg.163.com/new_web/loaditem.jsp/type="&imgtypenum&"/path="
+    Set http = CreateObject("Microsoft.XMLHTTP")
+    http.Open "GET", url, False
+    http.send
+    vIn = http.ResponseBody
+    strReturn = ""
+    For i = 1 To LenB(vIn)
+        ThisCharCode = AscB(MidB(vIn, i, 1))
+        If ThisCharCode < &H80 Then
+            strReturn = strReturn & Chr(ThisCharCode)
+        Else
+            NextCharCode = AscB(MidB(vIn, i + 1, 1))
+            strReturn = strReturn & Chr(CLng(ThisCharCode) * &H100 + CInt (NextCharCode))
+            i = i + 1
+        End If
+    Next
+    '------获取文件的地址------------'
+    Do
+        pos = InStr(strReturn, "showPic")
+        pos1 = InStr(strReturn, "128x128")
+        If pos>0 Then
+            Length = pos1 - pos
+            imageinfo = Mid(strReturn, pos, Length)
+            images = Split(imageinfo, ",")
+            imagepath = Mid(images(2), 2, Len(images(2)) -1)&"128x128."& fileext
+            '----------获取文件的名字------------'
+            namepos = InStr(strReturn, "\n名字:")
+            namepos1 = InStr(strReturn, "\n人气")
+            namelength = namepos1 - namepos
+            imagename = Mid(Mid(strReturn, namepos, namelength), 6)
+            strHTML = strHTML & "<tr><td><span class='grid2'><input id=addme type=checkbox>选定</span></td>"
+            strHTML = strHTML &"<td><span class='grid3'><a onMousemove='view()' onmouseout='hideview()' href=#><img onClick='addpro()' src='"&imageurl&imagepath&"' width=30 height=20></a></span></td>"
+            strHTML = strHTML & "<td><span class='grid2'>" & imagepath & "</span></td>"
+            strHTML = strHTML & "<td><span class='grid2'>" & imagename & "</span></td></tr>"
+            strReturn = Mid(strReturn, namepos1 + 20)
+        Else
+            Exit Do
+        End If
+    Loop
+    connect = strHTML
+End Function
+
+
+Function writeinner()
+    For i = start1.Value To start2.Value
+        strHTML = strHTML & connect(i)
+    Next
+    strHTML = "<table id='mytable' width=100% border=1 bordercolor=green>" &str1&strHTML& "</table>"
+    list.innerHTML = strHTML
+    infotext.innertext = infotext.innertext & "连接成功。"
+    infotext.innertext = infotext.innertext & vbCrLf &vbCrLf & "从第" & start1.Value & "页到第" & start2.Value & "页的gif图片文件信息!"
+End Function
+
+
+Function show()
+    If Not (IsNumeric(start2.Value)) Or Not (IsNumeric(start2.Value)) Then
+        infotext.innertext = infotext.innertext & vbCrLf & "配置错误..."
+    Else
+        infotext.innertext = "正在连接..."
+        window.settimeout "writeinner()", 200
+    End If
+End Function
+
+
+Sub view()
+    strHTML1 = "<img src='" &window.event.srcElement.src &"' width='140' height='140'>"
+    preview.runtimeStyle.pixelLeft = window.event.x + 5
+    preview.runtimeStyle.pixelTop = window.event.y + 5
+    preview.style.visibility = "visible"
+    preview.innerHTML = strHTML1
+End Sub
+
+
+Sub hideview()
+    preview.style.visibility = "hidden"
+End Sub
+
+
+Sub addpro()
+    Set obj = window.event.srcElement.parentelement.parentelement.parentelement.parentelement
+    If obj.cells(0).children(0).children(0).checked = false Then
+        obj.cells(0).children(0).children(0).checked = true
+    Else
+        obj.cells(0).children(0).children(0).checked = false
+    End If
+End Sub
+
+
+Sub tb_del()
+    Set obj = document.all.namedItem("mytable")
+    If obj.rows.Length>2 Then
+        Set tagID = document.all.namedItem("addme") '获取对象ID:delcheck'
+        For Each otag in tagID
+            If otag.checked Then
+                objrow = otag.parentelement.parentelement.parentelement.rowindex '获取对象的行序数;'
+                obj.deleteRow(objrow) '删除该项；'
+            End If
+        Next
+    Else
+        MsgBox "才一项你都删，哪有这样的?!", 0, "删除提醒"
+        Exit Sub
+    End If
+End Sub
+
+
+Sub selectall()
+    Set obj = document.all.namedItem("mytable")
+    Set objcheck = document.all.namedItem("sall")
+    Set tagID = document.all.namedItem("addme") '获取对象ID:addme'
+    For Each otag in tagID
+        otag.checked = objcheck.checked
+    Next
+End Sub
+
+
+Sub download()
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    If Not (fso.FolderExists("★网易下载图片★")) Then
+        fso.CreateFolder("★网易下载图片★")
+    End If
+    Set http = CreateObject("Microsoft.XMLHTTP")
+    Set obj = document.all.namedItem("mytable")
+    Set tagID = document.all.namedItem("addme") '获取对象ID:delcheck'
+    For Each otag in tagID
+        If otag.checked Then
+            Set objrow = otag.parentelement.parentelement.parentelement '获取对象的行;'
+            downurl = objrow.cells(1).children(0).children(0).children(0).src
+            filename = objrow.cells(3).children(0).innertext
+            http.Open "GET", downurl, False
+            http.send
+            Set aso = CreateObject("ADODB.Stream")
+            aso.Type = 1
+            aso.Open
+            aso.Write http.ResponseBody
+            aso.savetofile "★网易下载图片★\" & filename & "."&fileext, 2
+            aso.Close
+        End If
+    Next
+    infotext.innertext = infotext.innertext & vbCrLf & "文件下载成功。"
+    infotext.innertext = infotext.innertext & vbCrLf & "文件保存在:" & vbCrLf &"“★网易下载图片★”下"
+End Sub
+
+
+Sub downloadfile()
+    infotext.innertext = "正在下载文件...." '"
+    window.settimeout "download()", 200
+End Sub
+
+
+Sub changevalue()
+    AID = Array("130", "112", "67", "14", "122", "158")
+    PID = Array("90", "91", "89", "34", "198", "200")
+    If Atype.selectedindex = 0 Then
+        For i = 0 To 5
+            imagetype.options(i + 2).Value = PID(i)
+        Next
+    Else
+        For i = 0 To 5
+            imagetype.options(i + 2).Value = AID(i)
+        Next
+    End If
+End Sub
+</script>

@@ -1,0 +1,224 @@
+<job id="hibaidu采集">
+<script language="vbs">
+'on error resume next
+OK=msgbox("新用户，还是便例用户",vbYesNo,"请选择操作")
+if OK=6 then
+	truename = InputBox("请输入blog名：")
+	username = URLEncode(truename)
+	if username<>""  then  
+		call caiji_hibaidu(username,truename)
+	else
+		msgbox("没输入blog名，退出")
+	end if
+else
+	dbpath = "hibaidu.mdb"
+    connstr = "provider=microsoft.jet.oledb.4.0;data source=" & dbpath
+    Set conn = CreateObject("adodb.connection")
+    conn.Open connstr
+    Set rsuser = CreateObject("Adodb.Recordset")
+    sql = "select username from yongfa365 group by username order by username asc"
+	rsuser.open sql,conn,1,1
+	
+	do while not rsuser.eof 
+
+		call caiji_hibaidu(URLEncode(rsuser("username")),rsuser("username"))
+		rsuser.movenext
+		
+	loop
+end if
+
+sub caiji_hibaidu(username,truename)
+username=username
+truename=truename
+Sid = 0
+Oid = 1000
+url = "http://hi.baidu.com/" & username & "/blog/"
+Body = getHTTPPage(url)
+
+If InStr(body, ">[尾页]</a>") >1 Then
+    Oid_End = "/(\d+)"">\[尾页"
+    Oid_Temp = Int(getContent(Oid_End, body))
+Else
+    Oid_Temp = 10
+End If
+If Oid>Oid_temp Then Oid = Oid_temp
+'msgbox(Oid)
+
+'得到所有索引页的链接地址存到数组AllLinks里
+For idx = Sid To Oid
+    url = "http://hi.baidu.com/" & username & "/blog/index/" & idx
+    Body = getHTTPPage(url)
+    patrn = "<a\s+href=""\/" & username & "\/blog\/item\/(.+)\.html""\s+target=""_blank"">"
+    strng = Body
+    AllLinks = RegExpTest(patrn, strng)
+
+    AllLinks = Replace(AllLinks, "<a href=""", "")
+    AllLinks = Replace(AllLinks, """ target=""_blank"">", "")
+    
+    'AllLinks去除重复的，得到这个blog的所有的文章的地址到数组AllArticleLinks
+    AllLinks = Split(AllLinks, "||")
+    AllArticleLinks = " "
+    For s = 0 To UBound(AllLinks)
+        If InStr(AllArticleLinks, AllLinks(s))<1 Then
+            AllArticleLinks = AllArticleLinks & "||" & AllLinks(s)
+        End If
+    Next
+
+    AllArticleLinks = Split(mid(trim(AllArticleLinks),3), "||")
+
+    dbpath = "hibaidu.mdb"
+    connstr = "provider=microsoft.jet.oledb.4.0;data source=" & dbpath
+    Set conn = CreateObject("adodb.connection")
+    conn.Open connstr
+    
+    For s = 0 To UBound(AllArticleLinks)
+        url = "http://hi.baidu.com" & AllArticleLinks(s)
+        Set rs = CreateObject("Adodb.Recordset")
+        sql = "select * from yongfa365 where URL='" & AllArticleLinks(s) &"'"
+        rs.Open sql, conn, 1, 3
+
+        If rs.EOF Then
+            
+            Body = getHTTPPage(url)
+            Set re = New RegExp
+            re.IgnoreCase = True
+            re.Global = True
+            
+            patrn = "<div\sid=""m_blog""\sclass=""modbox"">([\s\S]+)<div\sclass=""line"">&nbsp;<\/div>"
+            body = getContent(patrn, body)
+            
+            patrn = "<div\sclass=""tit"">(.+)<\/div>" '标题
+            txtTitle = getContent(patrn, body)
+            If txtTitle<>"" Then
+                
+                patrn = "<div\sclass=""date"">(.+)<\/div>" '日期
+                addtime = getContent(patrn, body)
+                
+                patrn = "<table\sstyle=""table-layout:fixed""><tr><td><div\sclass=""cnt"">([\s\S]+)<\/div><\/td><\/tr><\/table>"'内容
+                txtContent = getContent(patrn, body)
+                
+                patrn = "[\s\S]+类别：(.+)<\/a>"'类别
+                Category = getContent(patrn, body)
+                rs.addnew
+                rs("txtTitle") = txtTitle
+                rs("txtContent") = txtContent
+                rs("Category") = Category
+                rs("AddTime") = AddTime
+                rs("ModiTime") = AddTime
+                rs("UserName") = truename
+                rs("URL") = AllArticleLinks(s)
+                rs.update
+                wscript.sleep 1000
+            End If
+        End If
+        
+    Next
+Next
+end sub
+msgbox("OK _yongfa365")
+'----------------------------------------函数区-----------------------------------------------------
+
+Function getContent(patrn, strng)
+    Dim regEx, oMatch, Matches '建立变量。
+    Set regEx = New RegExp '建立正则表达式。
+    regEx.Pattern = patrn'设置模式。
+    regEx.IgnoreCase = True '设置是否区分字符大小写。
+    regEx.Global = True '设置全局可用性。
+    Set Matches = regEx.Execute(strng)'执行搜索。
+    For Each oMatch in Matches'遍历匹配集合。
+        RetStr = oMatch.SubMatches(0)
+        Exit For
+    Next
+    getContent = RetStr
+End Function
+
+Function RegExpTest(patrn, strng)
+    Dim regEx, Match, Matches '建立变量。
+    Set regEx = New RegExp '建立正则表达式。
+    regEx.Pattern = patrn'设置模式。
+    regEx.IgnoreCase = True '设置是否区分字符大小写。
+    regEx.Global = True '设置全局可用性。
+    Set Matches = regEx.Execute(strng)'执行搜索。
+    For Each Match in Matches'遍历匹配集合。
+        RetStr = RetStr & "||" & Match.Value
+    Next
+    RegExpTest = RetStr
+End Function
+
+Function getHTTPPage(Path)
+    t = GetBody(Path)
+    getHTTPPage = BytesToBstr(t, "GB2312")
+End Function
+
+Function GetBody(url)
+    On Error Resume Next
+    Set xmlhttp = CreateObject("Microsoft.XMLHTTP")
+    With xmlhttp
+        .Open "Get", url, False, "", ""
+        .Send
+        If xmlhttp.Status<>200 Then Exit Function
+        GetBody = .ResponseBody
+    End With
+    Set xmlhttp = Nothing
+End Function
+
+Function BytesToBstr(Body, Cset)
+    On Error Resume Next
+    Dim objstream
+    Set objstream = CreateObject("adodb.stream")
+    objstream.Type = 1
+    objstream.Mode = 3
+    objstream.Open
+    objstream.Write Body
+    objstream.Position = 0
+    objstream.Type = 2
+    objstream.Charset = Cset
+    BytesToBstr = objstream.ReadText
+    objstream.Close
+    Set objstream = Nothing
+End Function
+
+Function getHTTPimg(url)
+    On Error Resume Next
+    Dim xmlhttp
+    Set xmlhttp = CreateObject("MSXML2.XMLHTTP")
+    xmlhttp.Open "GET", url, False
+    xmlhttp.send()
+    If xmlhttp.Status<>200 Then Exit Function
+    getHTTPimg = xmlhttp.responseBody
+    Set xmlhttp = Nothing
+    If Err.Number<>0 Then Err.Clear
+End Function
+
+Function Save2Local(from, tofile)
+    Dim geturl, objStream, imgs
+    geturl = Trim(from)
+    imgs = gethttpimg(geturl)
+    Set objStream = CreateObject("ADODB.Stream")
+    objStream.Type = 1
+    objStream.Open
+    objstream.Write imgs
+    objstream.SaveToFile tofile, 2
+    objstream.Close()
+    Set objstream = Nothing
+End Function
+
+Function URLEncode(strURL)
+    Dim I
+    Dim tempStr
+    For I = 1 To Len(strURL)
+        If Asc(Mid(strURL, I, 1)) < 0 Then
+            tempStr = "%" & Right(CStr(Hex(Asc(Mid(strURL, I, 1)))), 2)
+            tempStr = "%" & Left(CStr(Hex(Asc(Mid(strURL, I, 1)))), Len(CStr(Hex(Asc(Mid(strURL, I, 1))))) - 2) & tempStr
+            URLEncode = URLEncode & tempStr
+        ElseIf (Asc(Mid(strURL, I, 1)) >= 65 And Asc(Mid(strURL, I, 1)) <= 90) Or (Asc(Mid(strURL, I, 1)) >= 97 And Asc(Mid(strURL, I, 1)) <= 122) Then
+            URLEncode = URLEncode & Mid(strURL, I, 1)
+        Else
+            URLEncode = URLEncode & "%" & Hex(Asc(Mid(strURL, I, 1)))
+        End If
+    Next
+End Function
+
+
+</script>
+</job>

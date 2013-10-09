@@ -1,0 +1,163 @@
+<job id="hibaidu采集">
+<script language="vbs">
+For idx = 0 To 120
+if idx>10 then
+ idx2=idx
+ else
+ idx2="0"&idx
+ end if
+    url = "http://hi.baidu.com/hi/good"& idx2 &".html"
+    Body = getHTTPPage(url)
+    patrn = "class=b1 href=""http://hi.baidu.com/([^ ]+)"""
+    strng = Body
+    AllLinks = AllLinks & "|" & RegExpTest(patrn, strng)
+wscript.sleep 1000
+call CreateFile("usernameX.txt", AllLinks)
+next
+x = regExReplace(AllLinks,"\|{2,}","|")
+x=mid(x,2)
+call CreateFile("usernameX.txt", x)
+x=split(x,"|")
+
+AllLinks=""
+Y=""
+for idx=lbound(x) to ubound(x)
+    url = "http://hi.baidu.com/"& x(idx) &"/friends"
+    Body = getHTTPPage(url)
+    patrn = "/sys/checkuser/([^ ]+)\'"
+    strng = Body
+    AllLinks = AllLinks & "|" & RegExpTest(patrn, strng)
+    wscript.sleep 1000
+    call CreateFile("usernameY.txt", AllLinks)
+next
+y = regExReplace(AllLinks,"\|{2,}","|")
+y=mid(y,2)
+call CreateFile("usernameY.txt", y)
+
+
+'----------------------------------------函数区-----------------------------------------------------
+
+Function getContent(patrn, strng)
+    Dim regEx, oMatch, Matches '建立变量。
+    Set regEx = New RegExp '建立正则表达式。
+    regEx.Pattern = patrn'设置模式。
+    regEx.IgnoreCase = True '设置是否区分字符大小写。
+    regEx.Global = True '设置全局可用性。
+    Set Matches = regEx.Execute(strng)'执行搜索。
+    For Each oMatch in Matches'遍历匹配集合。
+        RetStr = oMatch.SubMatches(0)
+        Exit For
+    Next
+    getContent = RetStr
+End Function
+
+
+Function RegExpTest(patrn, strng)
+    Dim regEx, Match, Matches '建立变量。
+    Set regEx = New RegExp '建立正则表达式。
+    regEx.Pattern = patrn'设置模式。
+    regEx.IgnoreCase = True '设置是否区分字符大小写。
+    regEx.Global = True '设置全局可用性。
+    Set Matches = regEx.Execute(strng)'执行搜索。
+    For Each Match in Matches'遍历匹配集合。
+        RetStr = RetStr & "|" & Match.SubMatches(0)
+    Next
+    RegExpTest = RetStr
+End Function
+
+Function regExReplace(strng,patrn,OKstr)
+
+    Set regEx = New RegExp '建立正则表达式。
+    regEx.Pattern = patrn'设置模式。
+    regEx.IgnoreCase = True '设置是否区分字符大小写。
+    regEx.Global = True '设置全局可用性。
+	regExReplace = regEx.Replace(strng, OKstr)
+End Function
+
+Function getHTTPPage(Path)
+    t = GetBody(Path)
+    getHTTPPage = BytesToBstr(t, "GB2312")
+End Function
+
+Function GetBody(url)
+    On Error Resume Next
+    Set xmlhttp = CreateObject("Microsoft.XMLHTTP")
+    With xmlhttp
+        .Open "Get", url, False, "", ""
+        .Send
+        If xmlhttp.Status<>200 Then Exit Function
+        GetBody = .ResponseBody
+    End With
+    Set xmlhttp = Nothing
+End Function
+
+Function BytesToBstr(Body, Cset)
+    On Error Resume Next
+    Dim objstream
+    Set objstream = CreateObject("adodb.stream")
+    objstream.Type = 1
+    objstream.Mode = 3
+    objstream.Open
+    objstream.Write Body
+    objstream.Position = 0
+    objstream.Type = 2
+    objstream.Charset = Cset
+    BytesToBstr = objstream.ReadText
+    objstream.Close
+    Set objstream = Nothing
+End Function
+
+Function getHTTPimg(url)
+    On Error Resume Next
+    Dim xmlhttp
+    Set xmlhttp = CreateObject("MSXML2.XMLHTTP")
+    xmlhttp.Open "GET", url, False
+    xmlhttp.send()
+    If xmlhttp.Status<>200 Then Exit Function
+    getHTTPimg = xmlhttp.responseBody
+    Set xmlhttp = Nothing
+    If Err.Number<>0 Then Err.Clear
+End Function
+
+Function Save2Local(from, tofile)
+    Dim geturl, objStream, imgs
+    geturl = Trim(from)
+    imgs = gethttpimg(geturl)
+    Set objStream = CreateObject("ADODB.Stream")
+    objStream.Type = 1
+    objStream.Open
+    objstream.Write imgs
+    objstream.SaveToFile tofile, 2
+    objstream.Close()
+    Set objstream = Nothing
+End Function
+
+Function URLEncoding(vstrIn)
+    strReturn = ""
+    Dim i
+    For i = 1 To Len(vstrIn)
+        ThisChr = Mid(vstrIn, i, 1)
+        If Abs(Asc(ThisChr)) < &HFF Then
+            strReturn = strReturn & ThisChr
+        Else
+            innerCode = Asc(ThisChr)
+            If innerCode < 0 Then
+                innerCode = innerCode + &H10000
+            End If
+            Hight8 = (innerCode And &HFF00) \ &HFF
+            Low8 = innerCode And &HFF
+            strReturn = strReturn & "%" & Hex(Hight8) & "%" & Hex(Low8)
+        End If
+    Next
+    strReturn = Replace(strReturn, Chr(32), "%20")
+    URLEncoding = strReturn
+End Function
+
+Function CreateFile(FileName, Content)
+    Set FSO = CreateObject("Scripting.FileSystemObject")
+    Set fd = FSO.CreateTextFile(FileName, True)
+    fd.WriteLine Content
+End Function
+
+</script>
+</job>

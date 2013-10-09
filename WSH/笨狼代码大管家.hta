@@ -1,0 +1,892 @@
+<HTML>
+<HEAD>
+<TITLE>笨狼代码大管家</TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<style>
+body 
+{
+	font-size:12;
+	BACKGROUND: #DADADA;
+	margin-left:5;
+	overflow:visible;
+}
+ 
+.folder
+{
+	
+	font-size:18;
+	cursor:hand;
+}
+.folderIcon
+{
+	color:navy;
+	font-family:wingdings;
+	font-size:18;
+	cursor:hand;
+}
+.file 
+{
+	color:navy;	
+	font-size:18;
+	cursor:hand;
+	height:21;
+}
+.fileIcon
+{
+	color:navy;
+	font-family:wingdings;
+	font-size:18;
+	cursor:hand;
+	height:21;
+	display:inline;
+}
+input
+{
+	width:20;
+	overflow:visible;
+	border:1px solid lightblue;
+	background-color:#cccccc;
+	cursor:text;	
+}
+button
+{
+	border:1px solid  gray;	
+	width:60;	
+	margin-left:2;
+	cursor:hand;
+	font-size:12;
+	filter:progid:DXImageTransform.Microsoft.Gradient(startColorStr='#eaeaff', endColorStr='#618fff', gradientType='0'); 
+}
+textarea
+{
+	font-family:Verdana;
+	font-size:12px;
+	overflow-x:visible;
+	overflow-y:scroll;
+                margin-left:40;             
+}
+	
+#frmTree
+{ 
+	WIDTH:200px;
+	height:630;
+	MARGIN: 0px;
+	PADDING: 0px;	
+	overflow:scroll;
+	overflow-x:scroll;
+	MARGIN-right:10;
+}
+	
+#frmSeach
+{ 
+	WIDTH:200px;
+	height:630;
+	MARGIN: 0px;
+	PADDING: 0px;	
+	overflow:scroll;
+	MARGIN-right:10;	
+}
+
+#hide_control
+{ 
+	POSITION: absolute;
+	LEFT:213px;
+	TOP:43px;
+	WIDTH:10px;
+	height:630;	
+	BACKGROUND: #DADADA;
+	padding-top:300;
+	cursor:e-resize;
+	border:1 solid gray;
+	z-index:100;
+}
+#frmTop
+{
+	width:100%;
+	height:20;
+}		
+#txtFrm
+{ 
+	POSITION: absolute;
+	LEFT:230px;
+	TOP:50px;
+	WIDTH:100%;
+	MARGIN-left: -20px;
+	PADDING: 0px;
+	BACKGROUND: #DADADA;
+ } 
+ #tab1
+ {
+	border:1 solid  ;
+	cursor:hand;
+ }
+  #tab2
+ {
+	border:1 solid  ;
+	cursor:hand;
+	BACKGROUND: gray;
+	margin-right:200;
+ }
+
+</style>
+ 
+ 
+</HEAD>
+<BODY onselectstart="vbs:selectControl" onkeydown="vbs:shortCut">
+<div id="frmTop">
+	<span id="tab1" onclick="vbs:showMe me"> &nbsp;目 录 </span>
+	<span id="tab2" onclick="vbs:showMe me" > &nbsp;搜 索 </span>
+		标题：<input id="articleTitle" style="width:100" readonly/>
+	<button id="browse" onclick="vbs:browseMe" >预览</button>			
+	<button id="saveButton" onclick="vbs:saveFile currentFile,txt.value" >保存</button>
+	<button id="browse" onclick="vbs:createFile" >新建</button>	
+	<button id="format" onclick="vbs:formatXML">格式化XML</button>
+	<button id="removeST" onclick="vbs:removeTag">去除宋体</button>
+	<button id="test" onclick="vbs:showHelp">说明</button>	
+	行&nbsp;<span id="Ln">1</span><hr/>
+</div>
+<div  id="frmTree" onclick="vbs:f_Click" onkeydown="vbs:deletFile" >
+
+	<div id="tree" style='margin-left:0;color:navy;font-size:12;cursor:hand;' ></div>
+</div>
+ 
+<div  id="frmSeach" onclick="vbs:f_Click" >
+
+	<hr/>
+	<div id="list" style='margin-left:0' onkeydown="deletFile">
+	<input id="searchKey" style="width:100"/><br/>
+	<button onclick="vbs:seachFile" id="searchButton">查找</button>
+	<button onclick="vbs:blurSeach" id="blurSeach">模糊查找</button><br/>
+		<div id="seachList" style='margin-left:0' >搜索结果</div>
+	</div>
+</div>
+
+<input type="button"  id="hide_control" onmousedown="vbs:beginDrag" onmouseup="vbs:upHandler"  bgcolor="#eeeeee"/>
+<div valign="top" id="txtFrm">
+
+	<textarea id="txt"   onkeydown='vbs:TabTxt' onclick="vbs:showLn"  ></textarea>	
+</div>
+ 
+ 
+<SCRIPT LANGUAGE="vbscript">
+'**************************
+'*****超级大笨狼***********
+'**************************
+	on error resume next
+	window.resizeTo window.screen.availWidth,window.screen.availHeight
+	window.moveTo 0,0
+	frmTree.style.height = cint(window.screen.availHeight )-70
+	hide_control.style.height = cint(window.screen.availHeight * 0.98)+5
+	txt.style.height = cint(window.screen.availHeight )-70
+	txt.style.width = cint(window.screen.availWidth - 250) 
+	'txt.style.width = window.screen.availWidth - px2Int(txtFrm.style.left) -20
+	
+	Set fso = CreateObject("Scripting.FileSystemObject")
+	dim thisFileDir'定义本文件绝对路径
+	dim thisFileName'定义本文件名
+	dim thisFileFolder'定义本文件夹路径		
+
+	dim pattern:pattern="<(\/)?FONT(\sface=" & chr(34) & "宋体" & chr(34) & ")?>"'定义批量替换.net项目产生宋体的正则表达式
+	'"<[^<>]*>"   清除HTML标签。
+	dim regEx    ' 建立变量。
+	Set regEx = New RegExp   ' 建立正则表达式。
+	dim removeTagFileNum
+	dim removeTagFileName'处理过的文件名
+	
+	thisFileDir = replace(window.location.href,"file:///","")
+	thisFileDir = unescape(replace(thisFileDir,"/","\"))	 
+	thisFileName = LastOne(thisFileDir,"\")	
+	thisFileFolder=getFolderDir(thisFileDir)
+	tree.title = thisFileFolder
+	
+	dim currentDir'当前路径
+	dim currentFile'当前文件
+	dim currentDiv'当前DIV对象	
+	dim currentSpan'当前Span对象	
+	dim delatX
+	dim dragAble:dragAble = false	
+	dim Dtitle
+ 
+	Dtitle=document.title
+
+	currentDir = thisFileFolder		
+	set currentDiv = tree
+	tree.innerText =  getTxtName(thisFileName)	
+	
+	showMe tab1
+	showFolder tree 
+	
+sub removeTag()	
+'去掉.net项目中的宋体。
+	dim massage
+	massage="你确定要使用这个功能吗？如果文件多，时间也许会很长，请注意备份文件！"
+	if not window.confirm(massage) then exit sub
+	removeTagFileNum =0
+	removeTagFileName=""
+	removeIt(fso.GetFolder(thisFileFolder))
+	massage ="处理" & removeTagFileNum & "个文件完毕！"
+	massage = massage & chr(13) & removeTagFileName
+	alert(massage)
+end sub	
+
+ sub removeIt(specFolder)
+
+	dim tempStr 	 
+		for each f1 in specFolder.Files	
+				tempStr=""	
+				set st = f1.OpenAsTextStream
+				'逐行读		
+				Do While st.AtEndOfStream <> True
+					tempStr = tempStr & st.ReadLine & vbcrlf
+				 Loop				 
+				 if regMachCount(pattern,tempStr)>0 then
+					tempStr=regReplace(pattern,tempStr,vbcrlf,true,true)
+					saveFile f1,tempStr
+					removeTagFileNum = removeTagFileNum+1
+					removeTagFileName = removeTagFileName & f1 & chr(13)
+				 end if
+				st.Close			
+	next
+	set fd = fso.GetFolder(specFolder)
+		for each  fd1 in fd.SubFolders
+			removeIt fd1
+		next		
+end sub
+
+function regMachCount(PatternStr,OrginStr)	
+	regEx.Pattern = PatternStr    ' 设置模式。
+	regEx.IgnoreCase = true   ' 设置是否区分字符大小写。
+	regEx.Global = true   ' 设置全局可用性。
+	Set Matches = regEx.Execute(OrginStr) ' 执行搜索。	 
+	regMachCount=Matches.count
+	Set Matches=nothing
+end function
+
+function regReplace(PatternStr,OrginStr,ReplaceWithStr,I,G)
+'通用正则替换函数
+		regEx.Pattern = PatternStr    ' 设置模式。
+		regEx.IgnoreCase = I   ' 设置是否区分字符大小写。
+		regEx.Global = G   ' 设置全局可用性。
+		regReplace= regEx.Replace(OrginStr,ReplaceWithStr)   ' 执行替换。		 
+end function
+
+sub showLn
+	Ln.innerText = cint((window.event.offsetY-2)/15)+1	
+	
+end sub
+
+sub txt_onscroll
+	frmTop.scrollIntoView
+end sub	
+
+sub formatXML()	 
+	set doc = createobject("MSXML2.DOMDocument") 
+	if doc.loadXML(txt.value) then
+		Dim rdr, wrt
+		set wrt = createobject("MSXML2.MXXMLWriter")
+		set rdr = createobject("MSXML2.SAXXMLReader") 		
+		wrt.indent = True
+		Set rdr.contentHandler = wrt		
+		rdr.parse(txt.value)
+		txt.value = wrt.output
+	else
+		alert("XML格式不正确，请确保Well-Formed！")
+	end if	 
+end sub
+
+sub shortCut
+   
+	if window.event.keyCode=83 and window.event.ctrlKey  then
+		if currentFile<>"" then saveFile currentFile,txt.value  
+		window.event.cancelBubble = true
+		window.event.returnValue = false		
+	end if
+	if window.event.keyCode=66 and window.event.ctrlKey  then
+		browseMe
+		window.event.cancelBubble = true
+		window.event.returnValue = false
+	end if
+	 
+	if window.event.keyCode=78 and window.event.ctrlKey  then
+		createFile
+		window.event.cancelBubble = true
+		window.event.returnValue = false
+	end if
+	
+end sub	 
+sub browseMe	
+	dim win 
+            
+	    set win=window.open(currentFile)
+	 	
+end sub
+ 
+sub createFile
+	'点创建按钮，真的创建了．
+	if vartype(currentSpan)<>0 then currentSpan.style.color = "navy"		
+	if currentDir ="" then 
+		'如果点到了文件
+		currentDir=getFolderDir(currentFile)
+	else
+		'点到了文件夹
+		dim n				
+		set n=currentDiv.nextSibling	
+		do 			
+			if vartype(n) =9 then  exit do	
+			if left(n.title,len(currentDir)) <> currentDir then exit do
+			set  currentDiv	=n 			
+			set n=n.nextSibling						
+		loop
+	end if
+	dim newFile,s,f	
+	newFile = currentDir & "新收藏" & regReplace("[^\d]", mid(cstr(now()),3),"",true,true) & ".txt"	
+	currentFile=newFile'新建文件是当前文件	
+	'构造innerHTML
+	s =  "<div class='file' title='" & newFile		  
+	s = s & "'	style='margin-left:" 
+	if currentDiv.className = "file" then
+		s = s  &  currentDiv.style.marginLeft & ";' >&nbsp;"
+	else
+		s = s  &  px2Int(currentDiv.style.marginLeft) + 8 & ";' >&nbsp;"
+	end if
+	s = s  &  "<span class='fileIcon'>2" & "</span>"
+	s = s  &  "<input value='"	
+	s = s &  getTxtName(lastOne(newFile,"\")) & "' title='" & getTxtName(lastOne(newFile,"\")) & "' onchange='vbs:reName me' />"				 
+	s = s & "</div>"
+	'插入innerHTML
+	currentDiv.insertAdjacentHTML "AfterEnd",s 
+	
+	articleTitle.value = getTxtName(lastOne(newFile,"\"))
+	txt.value = ""
+	currentDir = ""
+	set currentDiv = currentDiv.nextSibling
+	set currentSpan = currentDiv.getElementsByTagName("SPAN")(0)
+	currentSpan.style.color = "red"	
+	'创建文件
+	set f=fso.CreateTextFile(newFile)
+	f.close
+end sub
+	
+function getFolderDir(fullDir)
+'输入得到全路径，得到文件夹路径
+	s=LastOne(fullDir,"\")
+	getFolderDir = left(fullDir,len(fullDir)-len(s))
+end function
+
+sub saveFile(strFileDir,strTxt)
+'保存对文件的修改	 
+  Dim  f, st 
+  set f= fso.GetFile(strFileDir)  
+   If f.attributes and 1 Then
+		if	window.confirm("该文件属性为只读,是否改变其属性并保存修改？") then f.attributes = f.attributes - 1
+	end if
+   Set st = fso.OpenTextFile(strFileDir, 2, True)   
+   
+   st.Write strTxt
+   st.close 
+end sub
+
+
+
+
+sub deletFile
+'删除文件
+dim  n	 
+	if window.event.keyCode =46 and window.event.srcElement.tagName<>"INPUT"  then	
+	
+		if currentFile<>""  then 
+			if currentFile = thisFileDir   then
+				alert "不允许删除本文件！" 
+				exit sub
+			end if
+			if fso.FileExists(currentFile)  then 
+				fso.deletefile currentFile,true
+				currentDiv.parentElement.removeChild currentDiv	
+				txt.value = ""
+				currentFile = ""
+				articleTitle.value = ""
+			end if		
+		end if
+		
+		if currentDir<>""   then 
+			if currentDir = thisFileFolder   then
+				alert "不允许删除根目录！" 
+				exit sub
+			end if					
+			set n = currentDiv.nextSibling
+					if window.confirm( currentDir & vbcrlf & "这个文件夹有子文件，你要删除全部子文件吗?") then
+						do 
+							if vartype(n) =9 then  exit do  
+							if px2Int(n.style.marginLeft) <= px2Int(currentDiv.style.marginLeft)   then exit do 							
+								n.parentElement.removeChild n								
+							set n=currentDiv.nextSibling				
+						loop					
+											
+						if  fso.FolderExists(currentDir)  then fso.DeleteFolder left(currentDir,len(currentDir)-1)
+						currentDiv.parentElement.removeChild currentDiv														
+					end if
+		end if
+		
+	end if	
+end sub
+
+
+
+sub showMe(obj)
+	if obj.id ="tab1" then
+		tab2.style.backgroundColor="gray"
+		tab1.style.backgroundColor="#DADADA"
+		frmSeach.style.display="none"  
+		frmTree.style.display=""
+	else
+		tab1.style.backgroundColor="gray"
+		tab2.style.backgroundColor="#DADADA"
+		frmSeach.style.display=""
+		frmTree.style.display="none"  
+	end if
+
+end sub
+
+sub beginDrag
+'开始拖拽	
+	delatX=window.event.clientX - px2Int(hide_control.currentStyle.left)	
+	document.attachEvent "onmousemove",getRef("moveHandler")	
+	dragAble = true	
+	window.event.cancelBubble = true	
+end sub
+
+sub moveHandler
+'移动绑定事件
+	if not dragAble then exit sub	
+	dim x
+	x = window.event.clientX - delatX
+	hide_control.style.left= x & "px"
+	txtFrm.style.left=( x + 20) & "px"	
+	txt.style.width = window.screen.availWidth - px2Int(txtFrm.style.left) -20
+	window.event.cancelBubble=true
+end sub
+
+sub upHandler
+'放开绑定事件	
+	document.detachEvent "onmousemove",getRef("moveHandler") 
+	dim x
+	x = window.event.clientX - delatX
+	
+	if px2Int(hide_control.style.left)>205 then
+	 frmTree.style.width = abs( px2Int(hide_control.style.left)-10) & "px"	
+	 frmSeach.style.width = abs( px2Int(hide_control.style.left)-10) & "px"
+	 else
+	 frmTree.style.width = "200px"	
+	 frmSeach.style.width = "200px"
+	end if
+
+	
+
+	dragAble = false		
+	window.event.cancelBubble=true	
+end sub 
+
+function getTxtName(fullName)
+'去掉文件名后缀
+	dim s:s=lastOne(fullName,".")	 
+	getTxtName = left(fullName ,len(fullName)-len(s)-1)
+end function
+
+
+
+
+sub reName(obj)
+	'改名
+	dim Arr,a
+	Arr=array("/","\",":","*","?",chr(34),"|","<",">")
+	for each a in Arr
+		if instr(obj.value,a) >0 then
+			alert "命名不能含有/\:*?" & chr(34) &  "|<>其中的一个"
+			obj.focus
+			exit sub
+		 end if
+	next	
+	dim oldName,newName,oldPath,oldType
+	oldName = obj.parentElement.title
+	oldPath = getFolderDir(oldName)
+	oldType = lastOne(oldName,".")
+	newName = oldPath & obj.value & "." & oldType	
+	Set f = fso.GetFile(oldName)
+	f.copy newName
+                currentFile = newName
+	f.delete True 
+	obj.parentElement.title = newName
+	articleTitle.value = getTxtName(lastOne(newName,"\"))
+end sub
+
+Function LastOne(Str,splitStr)
+'输入字符和分隔符，得到最后一部分
+	LastOne = right(Str,len(Str)-InStrRev(Str,splitStr))
+End Function
+
+sub  selectControl
+'控制页面选择的状态
+	if window.event.srcElement.tagName<>"INPUT" and window.event.srcElement.tagName<>"TEXTAREA"  then
+		document.selection.clear
+	end if
+end sub
+ 
+function isTXT(fileNameStr)
+'判断是否是文本类型的文件	
+	dim s,Arr,a,returnValue
+	returnValue = false
+	s=lcase(LastOne(fileNameStr,"."))
+	Arr=array("txt","sql","htm","html","asp","csv","aspx","xml","js","vbs","ini","bat","css","htc","hta","xsl","xslt","lrc","vb","cs","cx","asa","aspx","asax","config","shtml","stm","cpp","c","cxx","h","hpp","rc","pl","pm","cgi","php3","php","java","jsp","tpl","wsh","sgf","xsd","udl","asmx","inc","ascx","cst")
+	for each a in Arr
+		if a=s then 
+			returnValue =true
+			exit for
+		end if
+	next
+	isTXT = returnValue
+end function
+
+sub showFolder(obj)
+	    dim  folderspec :folderspec = obj.title 
+	    obj.setAttribute "parsed",true	   
+		if not fso.FolderExists(folderspec) then
+			alert folderspec & "该文件夹不存在，也许是被移动了，所以刷新一下本程序"
+			window.location.reload 
+		exit sub
+		end if
+		dim f, f1, sf,sf1,i,s,fName
+		set f=fso.GetFolder(folderspec)        
+		set sf=f.Subfolders
+		re = re &   f.name & "\"   
+		s=""           
+		for each sf1 in sf
+			s =  s & "<div class='folder' title='" & sf1.path & "\' style='margin-left:" & cint(replace(obj.style.marginLeft,"px","")) + 8 & ";'>"
+			s =  s & "<span class='folderIcon'>0" & "</span><input value='" & sf1.name & "' readonly style='cursor:hand;'/></div>" 				        
+		next 
+		
+		For Each f1 in f.Files 
+			if isTXT(f1.name)  then				  
+				s =  s & "<div class='file' title='" &  f1.path			  
+				s = s & "'	style='margin-left:" 
+				s = s  &  px2Int(obj.style.marginLeft) + 8 & ";' >&nbsp;"
+				s = s  &  "<span class='fileIcon'>2" & "</span>"
+				s = s  &  "<input value='"
+				fName = getTxtName(f1.name)
+				s = s & fName & "' title='" & fName & "' onchange='vbs:reName me' />"				 
+				s = s & "</div>" 
+			end if
+		Next	
+		 obj.insertAdjacentHTML "AfterEnd",s 		 
+end sub
+
+
+
+function px2Int(px)
+	px2Int = cint(replace(px,"px",""))
+end function 
+
+ 
+
+sub f_Click()
+	dim obj,d,f,state
+	set obj = window.event.srcElement
+	if obj.id="searchKey" then exit sub
+	if  obj.tagName<>"SPAN" and obj.tagName<>"INPUT"  then exit sub
+	set currentDiv = obj.parentElement	
+	set obj = currentDiv.getElementsByTagName("SPAN")(0)
+	 window.event.cancelBubble = true
+	select case obj.className 
+		case  "folderIcon"  
+			'点到了文件夹	
+			if vartype(currentSpan)=8 then
+				 currentSpan.style.color = "navy"
+			end if
+			set currentSpan = obj		
+			state = abs(cint(obj.innerHTML)  -1)
+			obj.innerHTML = state
+			obj.style.color="red"
+			set d = obj.parentElement			
+			currentDir = d.title
+			currentFile = ""
+			if d.getAttribute("parsed")=true then
+				'合拢
+					 
+				fold d,state			 
+			else
+				'解析	
+				showFolder d 	 
+			end if
+			
+			
+		case  "fileIcon"  
+			'点到了文件,在textArea里面载入文本文件
+			
+			if vartype(currentSpan)=8 then
+				 currentSpan.style.color = "navy"
+			end if
+			set currentSpan = obj
+			obj.style.color="red"
+			readText obj.parentElement.title
+			currentDir = ""
+			currentFile = obj.parentElement.title
+			
+	end select	
+end sub	
+
+sub fold(o,stateOpen)	'合拢	
+	dim n
+	set n=o.nextSibling	
+	do 
+		if vartype(n) =9 then  exit do 		
+		if px2Int(n.style.marginLeft) <= px2Int(o.style.marginLeft)   then exit do   	
+		if stateOpen=1 then n.style.display="" else  n.style.display="none"	
+		set n=n.nextSibling			
+	loop	
+end sub
+
+
+sub readText(filePath)  
+	Dim f,fName 
+	
+	if not fso.FileExists(filePath) then
+		alert filePath & vbcrlf & "该文件不存在，也许是被移动了，所以刷新一下本程序"
+		window.location.reload 
+		exit sub
+	end if
+		
+	'TXT已经加载的当前文件不再加载.
+	
+	if filePath = currentFile then exit sub
+	txt.value = ""
+	Set f = fso.OpenTextFile(filePath, 1, true)
+		if not f.AtEndOfStream  then 
+			txt.value = f.readAll
+		 else
+			txt.value = ""
+		 end if		
+		fName = lastOne(filePath,"\")		
+		articleTitle.value =  getTxtName(fName)			
+	f.Close
+	Ln.innerText = 1
+End sub
+
+sub TabTxt()
+	'支持tab键的文本框 
+	if  window.event.keyCode=38  then 
+		if cint(Ln.innerText) >1 then Ln.innerText =  cint(Ln.innerText)-1
+	end if
+	if window.event.keyCode=40 then 
+		Ln.innerText =  cint(Ln.innerText)+1	 
+			
+	end if
+	
+	if window.event.keyCode<> 9 then exit sub	
+	dim sel,mytext	
+	set sel = document.selection.createRange()
+	 'txt.createTextRange
+	mytext = sel.text
+	if len(mytext)=0   then
+		sel.text =string(4," ")
+		window.event.cancelBubble = true 
+		window.event.returnValue = false		
+		exit sub
+	end if
+	
+	dim  t,Arr
+	t=0
+	Arr = split(mytext,vbcrlf)	
+	if window.event.shiftKey then 
+	'按sift			
+		for i=0 to ubound(Arr)
+			if left(Arr(i),1)=vbtab then 
+				Arr(i) = mid(Arr(i),2)
+				t= t + 1
+			else
+				for j=1 to 4
+					if left(Arr(i),1)=" " then 
+						Arr(i) = mid(Arr(i),2)
+						t= t + 1
+					else
+						exit for
+					end if			
+				next
+			end if 
+		next
+		t= t 
+	else
+	'不按sift	
+		for i=0 to ubound(Arr)
+			Arr(i) = vbtab & Arr(i)
+			t= t +1
+		next				
+	end if
+		mytext = join(Arr,vbcrlf)
+		sel.text = mytext 
+		sel.collapse true 
+		sel.moveEnd "character",0 	
+		sel.moveStart "character",(len(mytext) * -1) + t		
+		sel.select()
+	window.event.cancelBubble = true 
+	window.event.returnValue = false
+end sub
+ 
+'下面是关于搜索
+dim  seachResult'查找结果
+dim num '结果数量
+dim word'搜索关键字
+ 
+tagStop = false 
+seachResult =""	
+
+sub seachFile()	
+		num =0	
+		seachList.innerText = "搜索结果"		 
+		word = searchKey.value		
+		 seachResult =""		 
+		 if trim(word)="" then
+			alert "关键字为空！"
+			searchKey.focus
+			exit sub
+		else
+			dim l
+			for each l in list.getElementsByTagName("DIV") 
+				if l.id<>"seachList" then list.removeChild l		 
+			next
+			seachList.innerText = "搜索结果"			
+			seachWord thisFileFolder
+			seachList.insertAdjacentHTML "AfterEnd",seachResult
+			seachList.innerText = "搜索结果：" & num & "个"
+			alert "搜索完毕！"	
+		 end if 
+end sub
+
+sub blurSeach()
+	
+			num =0	
+		seachList.innerText = "搜索结果"		 
+		word = lcase(searchKey.value)	
+		 seachResult =""		 
+		 if trim(word)="" then
+			alert "关键字为空！"
+			searchKey.focus
+			exit sub
+		else
+			dim l
+			for each l in list.getElementsByTagName("DIV") 
+				if l.id<>"seachList" then list.removeChild l		 
+			next
+			seachList.innerText = "搜索结果"			
+			blurSeachWord thisFileFolder
+			seachList.insertAdjacentHTML "AfterEnd",seachResult
+			seachList.innerText = "搜索结果：" & num & "个"
+			alert "搜索完毕！"	
+		 end if 
+end sub
+
+sub blurSeachWord(theFolder)
+	'if num>=100 then exit sub
+	dim f,f1,st,re,fd,fd1
+	set f = fso.GetFolder(theFolder)
+	for each f1 in f.Files
+		if isTxt(f1.path)  then
+			if regMachCount(word,f1.path)>0 then
+				seachResult = seachResult & "<div class='file' title='" &  f1.path 
+				seachResult = seachResult & "'><span class='fileIcon'>2" & "</span>"
+				seachResult = seachResult &  "<input value='"
+				fName = getTxtName(f1.name)
+				seachResult = seachResult & fName & "' title='" & fName & "' id=text1 name=text1>"				 
+				seachResult = seachResult & "</div>"
+				num = num + 1
+			else
+				set st = f1.OpenAsTextStream
+				'逐行读		
+				Do While st.AtEndOfStream <> True
+					if regMachCount(word,st.ReadLine)>0 then 
+						num = num +1						
+						seachResult = seachResult & "<div class='file' title='" &  f1.path 
+						seachResult = seachResult & "'><span class='fileIcon'>2" & "</span>"
+						seachResult = seachResult &  "<input value='"
+						fName = getTxtName(f1.name)
+						seachResult = seachResult & fName & "' title='" & fName & "' id=text1 name=text1>"				 
+						seachResult = seachResult & "</div>"
+						exit do				
+					end if
+				 Loop
+				st.Close
+			end if	
+		end if
+	next
+	set fd = fso.GetFolder(theFolder)
+		for each  fd1 in fd.SubFolders
+			seachWord fd1
+		next
+end sub
+
+sub seachWord(theFolder)	
+	'if num>=100 then exit sub
+	dim f,f1,st,re,fd,fd1
+	set f = fso.GetFolder(theFolder)
+	for each f1 in f.Files
+		if isTxt(f1.path)  then
+			if instr(f1.path,word)>0 then
+				seachResult = seachResult & "<div class='file' title='" &  f1.path 
+				seachResult = seachResult & "'><span class='fileIcon'>2" & "</span>"
+				seachResult = seachResult &  "<input value='"
+				fName = getTxtName(f1.name)
+				seachResult = seachResult & fName & "' title='" & fName & "'>"				 
+				seachResult = seachResult & "</div>"
+				num = num + 1
+			else
+				set st = f1.OpenAsTextStream
+				'逐行读		
+				Do While st.AtEndOfStream <> True
+					if instr(st.ReadLine,word)>0 then 
+						num = num +1						
+						seachResult = seachResult & "<div class='file' title='" &  f1.path 
+						seachResult = seachResult & "'><span class='fileIcon'>2" & "</span>"
+						seachResult = seachResult &  "<input value='"
+						fName = getTxtName(f1.name)
+						seachResult = seachResult & fName & "' title='" & fName & "'>"				 
+						seachResult = seachResult & "</div>"
+						exit do				
+					end if
+				 Loop
+				st.Close
+			end if	
+		end if
+	next
+	set fd = fso.GetFolder(theFolder)
+		for each  fd1 in fd.SubFolders
+			seachWord fd1
+		next
+end sub
+
+
+sub showHelp
+	dim msg,f,re,version
+	set f=fso.GetFile(thisFileDir)
+	version = f.DateLastModified 	
+	version =  regReplace("[^\d]",mid(cstr(version),3),"/",true,true) 
+                version =   left(version ,len(version)-3)
+	set re = nothing	
+	msg =		"  文本代码管理工具【IE5.5以上版本】" & vbcrlf
+	msg = msg & "------------------------------------------------" & vbcrlf
+	msg = msg & "  使用方法：放到文本类型的文件夹里面，双击运行。" & vbcrlf
+	msg = msg & "功能：" & vbcrlf
+	msg = msg & "1，快速浏览,预览CTRL+B，搜索文本类型的文件和代码；" & vbcrlf
+	msg = msg & "2，按DEL可以删除点中的文件和文件夹；" & vbcrlf
+	msg = msg & "3，可以修改文件名和文字内容,CTRL+S保存；" & vbcrlf
+	msg = msg & "4，可以创建文件CTRL+N并且编辑保存；" & vbcrlf
+	msg = msg & "5，文本编辑支持TAB和shift+TAB键；" & vbcrlf
+	msg = msg & "6，格式化Well-Formed的XML文件；"	& vbcrlf
+	msg = msg & "7，去掉.net文件产生的宋体标签；"	& vbcrlf
+	msg = msg &    vbcrlf
+	msg = msg & "作者：CSDN超级大笨狼[" & version & "版本]请随时到网站检查最新版本" & vbcrlf	
+	msg = msg & "欢迎传播使用,交流代码panyuguang962@sohu.com" & vbcrlf
+	msg = msg & "http://superdullwolf.cnzone.net/index.asp" & vbcrlf
+	alert msg
+end sub
+</SCRIPT>
+ 
+</BODY>
+</HTML>

@@ -1,0 +1,43 @@
+<job id="时间提醒">
+<script language="VBScript">
+'**************************************************************
+'时间提醒.wsf  [written by xlez]
+'date: 2006-9-15
+'**************************************************************
+
+function prompt(a,b)
+dim aa
+aa=InputBox(a,"模拟vb的提示输入",b)
+if aa<>"" then
+ prompt=aa
+else
+ prompt=""
+end if
+end function
+'=============================退出=============================
+sub quit
+ WScript.Quit
+end sub
+'==============================================================
+sub alert(a)
+ msgBox a & vbcrLf,0+48,"模拟vb的alert"
+end sub
+</script>
+<script language="JavaScript">
+
+function t(a)
+{WScript.sleep(a)
+alert('输入的时间'+a/1000+'s到了')
+c()
+}
+
+function c()
+{path=prompt('请输入时间:\n单位为分钟！','1')
+if(!path)Quit();
+if(/^\D+$/.test(path)){alert('输入时间应当为数字!');c()}
+t(parseInt(60000*path))
+}
+c()
+
+</script>
+</job>

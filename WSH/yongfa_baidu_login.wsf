@@ -1,0 +1,28 @@
+<job id="hibaidu²É¼¯">
+<script language="vbs">
+usr="article365"
+pwd="article365"
+username="285506476|chonghuaihuai|shinelou"
+username=split(username,"|")
+loginstr = "username=" + usr + "&password=" + pwd
+loginUrl = "http://passport.baidu.com/?login"
+Set xmlhttp = Createobject("Microsoft.XMLHTTP")
+xmlhttp.Open "POST",loginUrl,False
+xmlhttp.setRequestHeader "content-type","application/x-www-form-urlencoded"
+xmlhttp.Send loginstr
+for x=1 to 100
+	for i=0 to ubound(username)
+	        xmlhttp.Open "Get", "http://hi.baidu.com/"&username(i), True
+	        xmlhttp.Send
+	        if i mod 2 =0 then
+	       xmlhttp.Open "Get", "http://hi.baidu.com/"&username(i)&"/blog", True
+	        else
+	        xmlhttp.Open "Get", "http://hi.baidu.com/"&username(i)&"/profile", True
+	        end if
+	        xmlhttp.Send
+	      wscript.sleep 1000
+	next
+next
+msgbox("OK")
+</script>
+</job>

@@ -1,0 +1,27 @@
+<job id="hibaidu采集">
+<script language="vbs">
+usr="article365"
+pwd="article365"
+
+loginstr = "username=" + usr + "&password=" + pwd
+loginUrl = "http://passport.baidu.com/?login"
+Set xmlhttp = Createobject("Microsoft.XMLHTTP")
+xmlhttp.Open "POST",loginUrl,False
+xmlhttp.setRequestHeader "content-type","application/x-www-form-urlencoded"
+xmlhttp.Send loginstr
+loginstr=xmlHTTP.getResponseHeader("Set-Cookie")
+msgbox(loginstr)
+
+title="标题"
+content="内容"
+replystr = "spRefURL=http://hi.baidu.com/article365/creat/blog/&spBlogTitle="+title+"&spBlogCatName=默认分类&tj=发表文章&spIsCmtAllow=1&spBlogPower=0&ct=1&cm=1&spBlogText="+content
+xmlHttp.open "POST", "http://hi.baidu.com/article365/commit",false
+'xmlHttp.setRequestHeader "Referer","http://hi.baidu.com/article365/commit"
+xmlhttp.setRequestHeader "content-type","application/x-www-form-urlencoded"
+xmlHttp.setRequestHeader "Set-Cookie",loginstr
+xmlHttp.send replystr
+
+
+msgbox("OK")
+</script>
+</job>

@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"> 
+<html> 
+<head> 
+<title>package file v0.1</title> 
+<meta http-equiv="Content-Type" content="text/html; charset=GB2312"> 
+<HTA:APPLICATION     
+     ID="package file v0.1"     
+     APPLICATIONNAME="package file v0.1"     
+     VERSION="0.1"     
+     SCROLL="no"     
+     INNERBORDER="no"     
+     CONTEXTMENU="yes"     
+     CAPTION="yes"     
+     ICON="no"     
+     SHOWINTASKBAR="yes"     
+     SINGLEINSTANCE="yes"     
+     SYSMENU="yes"     
+     MAXIMIZEBUTTON ="no" 
+     WINDOWSTATE="normal" 
+     NAVIGABLE="yes" 
+     /> 
+<SCRIPT LANGUAGE="VBScript"> 
+function transfert() 
+     dim filename 
+     filename = document.getElementById("srcFile").value 
+     if len(filename)>0 then 
+             dim oReq         
+             'on error resume next 
+             '//创建XMLHTTP对象 
+             set oReq     = CreateObject("MSXML2.XMLHTTP") 
+                 oReq.open "get","file:\\" & filename,false 
+                 oReq.send     
+             ff = oReq.responseBody 
+             dim u,s,kk 
+             u = lenb(ff) 
+             redim kk(u-1) 
+             for i=0 to u-1 
+                 s = hex(ascb(midb(ff,i+1,1))) 
+                 if len(s)<2 then 
+                     s = "0" & s 
+                 end if 
+                 'kk = kk & s 
+                 kk(i) = s 
+             next 
+             make filename,join(kk,"") 
+     else 
+             document.getElementById("srcFile").focus 
+             msgbox "请选择要压缩的文件",16,"提示" 
+     end if 
+end function 
+function make(filename,data) 
+     dim htm,file 
+     file = mid(filename,instrrev(filename,"\")+1) 
+     htm = htm & "<html>"                             & vbcrlf 
+     htm = htm & "<head>"                             & vbcrlf 
+     htm = htm & "<title>selfdec</title>"     & vbcrlf 
+     htm = htm & "<meta http-equiv=""Content-Type"" content=""text/html; charset=GB2312"">" & vbcrlf 
+     htm = htm & "<HTA:APPLICATION "                 & vbcrlf 
+     htm = htm & "     ID=""selfdec"" "             & vbcrlf 
+     htm = htm & "     APPLICATIONNAME=""self"" " & vbcrlf 
+     htm = htm & "     VERSION=""0.1"" "             & vbcrlf 
+     htm = htm & "     SCROLL=""no"" "                 & vbcrlf 
+     htm = htm & "     INNERBORDER=""no"" "     & vbcrlf 
+     htm = htm & "     CONTEXTMENU=""no"" "     & vbcrlf 
+     htm = htm & "     CAPTION=""no"" "             & vbcrlf 
+     htm = htm & "     ICON=""no"" "                 & vbcrlf 
+     htm = htm & "     SHOWINTASKBAR=""no"" "     & vbcrlf 
+     htm = htm & "     SINGLEINSTANCE=""yes"" "& vbcrlf 
+     htm = htm & "     SYSMENU=""no"" "             & vbcrlf 
+     htm = htm & "     MAXIMIZEBUTTON =""no""" & vbcrlf 
+     htm = htm & "     WINDOWSTATE=""normal""" & vbcrlf 
+     htm = htm & "     NAVIGABLE=""yes"""             & vbcrlf 
+     htm = htm & "     />"                                 & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "<SCRIPT LANGUAGE=""VBScript"">"             & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "'//保存文件"                     & vbcrlf 
+     htm = htm & "function saveFile(filename,str)"             & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "     set adodbStream = CreateObject(""ADODB"" & ""."" & ""Stream"")" & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "     adodbStream.Type= 1"     & vbcrlf 
+     htm = htm & "     adodbStream.Open"             & vbcrlf 
+     htm = htm & "     adodbStream.write str"     & vbcrlf 
+     htm = htm & "     adodbStream.SaveToFile filename,2" & vbcrlf 
+     htm = htm & "     adodbStream.Close"             & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "end function"                     & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "'//VB数组转变成二进制格式" & vbcrlf 
+     htm = htm & "Function MultiByteToBinary(MultiByte)" & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "     Dim RS, LMultiByte, Binary"                 & vbcrlf 
+     htm = htm & "     Const adLongVarBinary = 205"             & vbcrlf 
+     htm = htm & "     Set RS = CreateObject(""ADODB.Recordset"")" & vbcrlf 
+     htm = htm & "     LMultiByte = LenB(MultiByte)"             & vbcrlf 
+     htm = htm & "     If LMultiByte>0 Then"     & vbcrlf 
+     htm = htm & "             RS.Fields.Append ""mBinary"", adLongVarBinary, LMultiByte"     & vbcrlf 
+     htm = htm & "             RS.Open"                 & vbcrlf 
+     htm = htm & "             RS.AddNew"                 & vbcrlf 
+     htm = htm & "             RS(""mBinary"").AppendChunk MultiByte & ChrB(0)"                 & vbcrlf 
+     htm = htm & "             RS.Update"                 & vbcrlf 
+     htm = htm & "             Binary = RS(""mBinary"").GetChunk(LMultiByte)"                     & vbcrlf 
+     htm = htm & "     End If"                             & vbcrlf 
+     htm = htm & "     MultiByteToBinary = Binary"                 & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "End Function"                     & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "function DeleteMe()"             & vbcrlf 
+     htm = htm & "     "                                 & vbcrlf 
+     htm = htm & "     dim filename"                 & vbcrlf 
+     htm = htm & "     filename     = document.location.href" & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "     filename     = mid(filename,instrrev(filename,""/"")+1)" & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "     Dim fso, MyFile"             & vbcrlf 
+     htm = htm & "     Set fso             = CreateObject(""Script" & "ing.FileS" & "ystemObject"")     " & vbcrlf 
+     htm = htm & "     Set MyFile     = fso.GetFile(filename)" & vbcrlf 
+     htm = htm & "             MyFile.Delete"             & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "end function"                     & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "function exec()"                 & vbcrlf 
+     htm = htm & "     "                                 & vbcrlf 
+     htm = htm & "     '//屏蔽错误"                 & vbcrlf 
+     htm = htm & "     'on error resume next"     & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "     '//改变窗体大小"             & vbcrlf 
+     htm = htm & "     window.resizeTo 0,0"     & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "     dim data,t,kk,filename" & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "     '//得到数据"                 & vbcrlf 
+     htm = htm & "     data             = document.getElementById(""divData"").innerText" & vbcrlf 
+     htm = htm & "     '//得到文件名"                 & vbcrlf 
+     htm = htm & "     filename     = document.getElementById(""divFileName"").innerText" & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "     '//得到数据长度"             & vbcrlf 
+     htm = htm & "         u = len(data)"                 & vbcrlf 
+     htm = htm & "     "                                 & vbcrlf 
+     htm = htm & "     '//获得文件数组"             & vbcrlf 
+     htm = htm & "     for i=1 to u step 2"     & vbcrlf 
+     htm = htm & "             t = mid(data,i,2)"     & vbcrlf 
+     htm = htm & "             kk = kk & ChrB(clng(""&H"" & t))" & vbcrlf 
+     htm = htm & "     next"                             & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "     '//转变成二进制格式"     & vbcrlf 
+     htm = htm & "     dataArry = MultiByteToBinary(kk)"     & vbcrlf 
+     htm = htm & "     "                                 & vbcrlf 
+     htm = htm & "     '//保存文件     "                 & vbcrlf 
+     htm = htm & "     saveFile filename,dataArry"                 & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "     '//删除自己"                 & vbcrlf 
+     htm = htm & "     DeleteMe"                     & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "     '//关闭自己"                 & vbcrlf 
+     htm = htm & "     window.opener = nothing"& vbcrlf 
+     htm = htm & "     window.close"                 & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "end function"                     & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "<" & "/SCRIPT>"                 & vbcrlf 
+     htm = htm & "<" & "/head>"                     & vbcrlf 
+     htm = htm & "<body marginleft=0 marginright=0 onload=""exec()"">" & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "<div id=""divFileName""     style=""display:none;"">" & file & "</div>" & vbcrlf 
+     htm = htm & "<div id=""divData""             style=""display:none;"">" & data & "</div>" & vbcrlf 
+     htm = htm & ""                                     & vbcrlf 
+     htm = htm & "</body>"                             & vbcrlf 
+     htm = htm & "</html>"                             & vbcrlf 
+     dim fso,f 
+     dim this_file 
+             this_file = file & "-pf.hta" 
+     Set fso = CreateObject("Scripting.FileSystemObject") 
+     Set f = fso.OpenTextFile(this_file, 2, True) 
+             f.Write htm 
+     msgbox "生成文件" & this_file & "成功！",64,"生成" 
+
+
+end function 
+
+
+</SCRIPT> 
+</head> 
+<body marginleft=0 marginright=0 onload="window.resizeTo 389,145 "> 
+请选择文件：<input type=file id="srcFile" style="width:260px;"><br><br> 
+                 <input type=button value="     转换     " onclick="transfert">     <input type=button value="     关闭     " onclick="window.close"> 
+</body> 
+</html> 

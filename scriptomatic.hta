@@ -1,0 +1,333 @@
+<html>
+<!--********************************************************************
+'*
+'*  File:           scriptomatic.hta 
+'*  Created:        August 2002
+'*  Version:        1.0
+'*
+'*  Description:    Learning tool. Enables users to generate and run 
+'*                  WSH scripts (in VBScript) that use WMI to display
+'*                  properties available through the Win32_ classes.      
+'*
+'*
+'* Copyright (C) 2002 Microsoft Corporation
+'*
+'********************************************************************-->
+<title>Windows .NET Server Resource Kit - Scriptomatic</title>
+
+<HTA:APPLICATION 
+     ID="objScriptomatic" 
+     APPLICATIONNAME="Scriptomatic"
+     SCROLL="no"
+     SINGLEINSTANCE="yes"
+     WINDOWSTATE="normal"
+>
+<head>
+
+<style>
+BODY
+{
+   background-color: buttonface;
+   font-family: Helvetica;
+   font-size: 8pt;
+   margin-top: 10px;
+   margin-left: 10px;
+   margin-right: 10px;
+   margin-bottom: 10px;
+}
+
+
+.button
+{
+   font-family: Helvetica;
+   font-size: 8pt;
+   width: 35px;
+}
+
+textarea
+{
+   font-family: arial;
+   font-size: 8pt;
+   margin-left: 3px;
+}
+
+select
+{
+   font-family: arial;
+   font-size: 8pt;
+   width: 450px;
+   margin-left: 0px;
+}
+
+</style>
+
+<script language="vbscript">
+
+'*********************************************
+'* WHILE LOADING...
+'*
+'* As the application loads, we open a new
+'* browser window to act as a crude progress dialog
+'* while we wait for the enumeration of the WMI
+'* classes to complete.
+'*
+'* We minimize the parent window prior to presenting
+'* the progress dialog and resize it back to normal
+'* once the classes are enumerated.
+'*
+'*********************************************
+
+Sub Window_Onload
+
+   '* resize parent window
+
+   self.ResizeTo 1,1
+   self.MoveTo 300,300
+   
+   '* create dialog window
+
+   Set objDialogWindow = window.Open("about:blank","ProgressWindow","height=15,width=250,left=300,top=300,status=no,titlebar=no,toolbar=no,menubar=no,location=no,scrollbars=no") 
+   objDialogWindow.Focus()
+   objDialogWindow.ResizeTo 250,15
+   objDialogWindow.document.body.style.fontFamily = "Helvetica"
+   objDialogWindow.document.body.style.fontSize = "11pt"
+   objDialogWindow.document.writeln "<html><body>Loading WMI Classes.</body></html>"
+   objDialogWindow.document.title = "Please wait."
+   objDialogWindow.document.body.style.backgroundColor = "buttonface"
+   objDialogWindow.document.body.style.borderStyle = "none"
+   objDialogWindow.document.body.style.marginTop = 15
+ 
+   '****************************************************************************
+   '* enumerate the WMI classes in the cimv2 namespace, filling up a recordset
+   '* with the names of the classes that begin with Win32_ and are not association
+   '* classes. we'll use the class names stored in the recordset to populate a 
+   '* pulldown.
+   '*****************************************************************************
+
+   Const adVarChar = 200
+   Const MaxCharacters = 255
+   strComputer = "."
+   
+   Set rsDataList = CreateObject("ADODB.Recordset")
+   rsDataList.Fields.Append "ClassName", adVarChar, MaxCharacters
+   rsDataList.Open
+
+   Set objWMIService = GetObject("winmgmts:\\" & strComputer & "\root\cimv2")
+   
+   iCounter = 0
+   For Each objclass in objWMIService.SubclassesOf()
+
+   '* write a . to the dialog window once for every 250 classes
+   '* to let the user know something is still happening.
+
+      iCounter = iCounter + 1
+      If iCounter Mod 250 = 0 Then
+         objDialogWindow.document.writeln "."
+      End If
+      bIsQualifier = False 
+      If UCase(Left(objClass.Path_.Class,5)) = "WIN32" Then
+         For Each Qualifier in objClass.Qualifiers_
+            If UCase(Trim(Qualifier.Name)) = "ASSOCIATION" Then
+               bIsQualifier = True
+            End If
+         Next
+
+   '* the class name starts with win32_ and is not an association
+   '* class - so append it to the recordset
+
+         If bIsQualifier = False Then
+            rsDataList.AddNew
+            rsDataList("ClassName") = objClass.Path_.Class
+            rsDataList.Update
+         End If
+      End If
+   Next
+
+   '* populate the pulldown
+
+   rsDataList.Sort = "ClassName"
+   rsDataList.MoveFirst
+   strHTML = "<select onChange=""ComposeCode()"" name=ClassesPulldown>" &_
+             "<option value=""PulldownMessage"">Begin by selecting a class"
+   Do Until rsDataList.EOF
+      strHTML = strHTML & "<option value= " & chr(34) &_
+      rsDataList.Fields.Item("ClassName") & chr(34) &_
+      ">" & rsDataList.Fields.Item("ClassName")
+      rsDataList.MoveNext
+   Loop
+   strHTML = strHTML & "</select>"
+   wmi_classes.insertAdjacentHTML "beforeEnd", strHTML
+
+
+   '* the classes are enumerated, close the progress dialog
+   '* and resize the main window
+
+   objDialogWindow.Close
+   self.Focus()
+   self.ResizeTo 670,550
+   self.MoveTo 200,200
+   
+   '* the user hasn't had a chance to select a class and generate
+   '* a script - so disable the run and save buttons because
+   '* they are not yet meaningful.
+   
+   run_button.disabled = True
+   save_button.disabled = True
+
+End Sub
+
+'****************************************************************************
+'* when the user selects a class from the pulldown, the ComposeCode subroutine
+'* is called. it queries WMI to determine the properties of the class the user
+'* selected and uses the information to construct sample code which it puts
+'* in the main window's textarea.
+'****************************************************************************
+
+Sub ComposeCode
+
+   '* if the user happens to select the message instead of a class, just
+   '* disable the run and save buttons and exit the subroutine
+
+   If ClassesPulldown.Value = "PulldownMessage" Then
+      run_button.disabled = True
+      save_button.disabled = True
+      Exit Sub
+   End If
+
+   strComputer = "."
+   Set objWMIService = GetObject("winmgmts:{impersonationLevel=impersonate}!\\" & strComputer & "\root\cimv2")
+   Set objClass = objWMIService.Get(ClassesPulldown.Value)
+   strHTML = "<textarea cols=100 rows=30>"
+   strHTML = strHTML & "On Error Resume Next" & Chr(10)
+   strHTML = strHTML & "strComputer = " & chr(34) & "." & chr(34) & Chr(10)
+   strHTML = strHTML & "Set objWMIService = GetObject(" & chr(34) & "winmgmts:\\" & chr(34) & " & strComputer & " & chr(34) & "\root\cimv2" & chr(34) & ")" & Chr(10) 
+   strHTML = strHTML & "Set colItems = objWMIService.ExecQuery(" & chr(34) & "Select * from " & ClassesPulldown.value & chr(34) & ",,48)" & Chr(10)
+   strHTML = strHTML & "For Each objItem in colItems" & Chr(10)
+   For Each objProperty in objClass.properties_
+      strHTML = strHTML & "&nbsp; &nbsp; Wscript.Echo " & chr(34) & objProperty.name & ": " & chr(34) & " & " & "objItem." & objProperty.name & Chr(10)
+   Next
+   strHTML = strHTML & "Next" & "</textarea>"
+   code.InnerHTML= strHTML
+
+   '* once the code is successfully composed and put into the textarea, ensure
+   '* that the run and save buttons are enabled
+
+   run_button.disabled = False
+   save_button.disabled = False
+
+End Sub
+
+'****************************************************************************
+'* when the user presses the Run button, we use the WshShell object's Run
+'* method to run the code currently in the textarea under cscript.exe. we use
+'* cmd.exe's /k parameter to ensure the command window remains visible after
+'* the script has finished running.
+'****************************************************************************
+
+Sub RunScript
+
+   Set objFS = CreateObject("Scripting.FileSystemObject")
+   strTmpName = "temp_script.vbs"
+   Set objScript = objFS.CreateTextFile(strTmpName)
+   objScript.Write code.InnerText
+   objScript.Close
+   Set objShell = CreateObject("WScript.Shell")
+   strCmdLine = "cmd /k cscript.exe "
+   strCmdLine = strCmdLine & strTmpName
+   objShell.Run(strCmdLine)
+
+End Sub
+
+'****************************************************************************
+'* when the user presses the Save button, we present them with an InputBox
+'* and force them to give us the full path to where they'd like to the save
+'* the script that is currently in the textarea. The user is probably quite
+'* upset with our laziness here....and who can blame them?
+'****************************************************************************
+
+Sub SaveScript
+
+   Set objFSO = CreateObject("Scripting.FileSystemObject")
+   strSaveFileName = InputBox("Please enter the complete path where you want to save your script (for example, C:\Scripts\MyScript.vbs).")
+   If strSaveFileName = "" Then
+      Exit Sub
+   End If
+
+   Set objFile = objFSO.CreateTextFile(strSaveFileName)
+   objFile.WriteLine code.InnerText
+   objFile.Close
+
+End Sub
+
+
+'****************************************************************************
+'* when the user presses the Open button, we present them with an InputBox
+'* and force them to give us the full path to the script they'd like to open.
+'* This is, of course, rather wonky - but it's meant to be.
+'****************************************************************************
+
+Sub OpenScript
+
+   Set objFSO = CreateObject("Scripting.FileSystemObject")
+   strOpenFileName = InputBox("Please enter the complete path name for your script (for example, C:\Scripts\MyScript.vbs).")
+   If strOpenFileName = "" Then
+      Exit Sub
+   End If
+
+   Set objFile = objFSO.OpenTextFile(strOpenFileName)
+   strHTML = "<textarea cols=100 rows=30>"
+   strHTML = strHTML & objFile.ReadAll()
+   strHTML = strHTML & "</textarea>"
+   code.InnerHTML =  strHTML
+   objFile.Close
+   run_button.disabled = False
+   save_button.disabled = False
+
+End Sub
+
+'****************************************************************************
+'* when the user presses the Quit button, the file where we've been storing
+'* the scripts gets deleted and the main window closes. 
+'****************************************************************************
+
+Sub QuitScript
+
+   On Error Resume Next
+   Set objFSO = CreateObject("Scripting.FileSystemObject")
+   objFSO.DeleteFile "temp_script.vbs"
+   Set objFSO = Nothing
+   self.Close()
+
+End Sub
+
+
+</script>
+</head>
+
+
+'***********************************************************
+'* our HTML layout - the only thing of note here is that when
+'* each of the buttons is pressed (clicked), their onClick
+'* attributes causes the appropriate subroutine to be called
+'***********************************************************
+
+<body>
+
+<table>
+   <td>
+      <span id="wmi_classes">&nbsp;</span>
+      <input id=runbutton  class="button" type="button" value="Run"  name="run_button"  onClick="RunScript()">
+      <input id=savebutton class="button" type="button" value="Save" name="save_button" onClick="SaveScript()">
+      <input id=openbutton class="button" type="button" value="Open" name="open_button" onClick="OpenScript()">
+      <input id=quitbutton class="button" type="button" value="Quit" name="quit_button" onClick="QuitScript()">
+      <div ID=code_header></div>
+      <div id="code"></div>
+   </td>
+</tr>
+</table>
+
+
+
+</body>
+
+</html>

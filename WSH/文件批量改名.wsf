@@ -1,0 +1,81 @@
+<job id="文件批量改名程序">
+<script language="VBScript">
+'**************************************************************
+'文件批量改名.wsf  [written by xlez]
+'date: 2006-9-7
+'请保留此信息，谢谢使用！
+'此程序可以按数字顺序批量更改文件名。
+'可以支持拖拽，把需要处理的文件夹拖到程序上即可。
+'***************************************************************
+function prompt(a,b)
+dim aa
+aa=InputBox(a,"文件批量改名程序！",b)
+if aa<>"" then
+ prompt=aa
+else
+ prompt=""
+end if
+end function
+</script>
+<script language="JavaScript">
+var stat=''
+function BrowseFolder(prompts)
+{var Shell  = new ActiveXObject("Shell.Application")
+ var Folder = Shell.BrowseForFolder(0,prompts,0x0040,0x11)
+ Folder = Folder.items().item().Path
+ return(/^\w:/.test(Folder))?Folder:''
+}
+
+function batNameFile(path,len,type,_x,x_)
+{if(!_x)_x=''; if(!x_)x_=''
+ var fso,fs,fname,exName,newName,fatt
+ var tmp,i=1,j=0
+ if(!/:/.test(path))path=WScript.ScriptFullName.replace(/\//,'\\').replace(/[\/\\]+[^\/\\]+$/,'')+'\\'+path	//返回本路径的绝对路径
+ fso = new ActiveXObject("Scripting.FileSystemObject");
+ if(!fso.folderExists(path)){stat+="文件夹"+path+"不存在";return}
+ fs = new Enumerator(fso.GetFolder(path).files);
+ for(;!fs.atEnd(); fs.moveNext())
+  {fname=fso.GetFileName(fs.item());            //文件名
+   exName=fname.replace(/[^\.]*\.+/g,'')	//文件扩展名
+   fatt=fso.getFile(fs.item()).attributes	//文件属性
+   if(fatt>35 || fatt==6 || exName=='lnk'){}	//防止给系统文件及快捷方式改名
+   else
+   {if(!type || type.toLowerCase()==exName.toLowerCase())
+    {tmp=len-i.toString().length+1 
+     newName=_x+((tmp>1)?new Array(tmp).join('0'):'')+i+x_+'.'+exName	//新文件名
+     if(!fso.fileExists(path+'\\'+newName))
+     {fso.moveFile(path+'\\'+fname,path+'\\'+newName)}
+     i++
+    }
+   }
+ }
+ fso=fs=null
+ stat+='\n'+path+'\t处理了['+(i-1)+']个文件!'
+}
+
+function x()
+{var type,path,i,str=''
+ if(WScript.Arguments.length<1)
+ {path=BrowseFolder('选择要处理的文件夹：')
+  path=prompt('文件夹路径可以是绝对路径，\n\n也可以是相对于本程序的相对路径：',path)
+  if(!path)WScript.Quit()
+  type=prompt('文件夹路径:\n'+path+'\n\n输入文件扩展名:\t如jpg\n\n[不输入就无论任何类型文件全部统一改名]','jpg')
+ }
+ else
+ {for(i=0;i<WScript.Arguments.length;i++)str+=WScript.Arguments(i)+'\n'
+  type=prompt('文件夹路径:\n'+str+'\n\n输入文件扩展名:\t如jpg\n\n[不输入就无论任何类型文件全部统一改名]','jpg')
+ }
+ var len=prompt('输入文件长度\n\n如想0001.jpg，输入4(文件名长度为4)','3');len=parseInt(len)
+ if(!len)WScript.Quit()
+ var _x=prompt('文件名前缀\n\n如想a_012.jpg就输入a_','')
+ var x_=prompt('文件名后缀\n\n如想012_b.jpg就输入_b','')
+ if(WScript.Arguments.length<1) batNameFile(path,len,type,_x,x_)
+ else
+ {for(i=0;i<WScript.Arguments.length;i++)
+  batNameFile(WScript.Arguments(i),len,type,_x,x_)
+ }
+ WScript.echo('已经处理完毕\n'+stat)
+}
+x()
+</script>
+</job>

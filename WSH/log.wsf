@@ -1,0 +1,28 @@
+<job id="hibaidu²É¼¯">
+<script language="vbs">
+usr="chenmanfen"
+pwd="19871208"
+username="linghui1985|snlj317|qufeiyan|hongweigang|babanana|booobo|seralee|choujindehuhu|kewen25|hss8857|shuizhuyu87|yourunique|huk201|kibitzer|yuanwei123|oo_maomao4241|winna9|tiankongdelei|xrnb|rever|2007411|snow|yan_shu|471188374|qianshuihaiyang|dianayhh|rocith|kongxinyuaner|huzhehan|bajie0303|swearitagain|horse_m|99vivian|kuailedetaiyang|yyw115|djez|mumu_constance"
+username=split(username,"|")
+loginstr = "username=" + usr + "&password=" + pwd
+loginUrl = "http://passport.baidu.com/?login"
+Set xmlhttp = Createobject("Microsoft.XMLHTTP")
+xmlhttp.Open "POST",loginUrl,False
+xmlhttp.setRequestHeader "content-type","application/x-www-form-urlencoded"
+xmlhttp.Send loginstr
+for x=1 to 100
+	for i=0 to ubound(username)
+	        xmlhttp.Open "Get", "http://hi.baidu.com/"&username(i), True
+	        xmlhttp.Send
+	        if i mod 2 =0 then
+	       xmlhttp.Open "Get", "http://hi.baidu.com/"&username(i)&"/blog", True
+	        else
+	        xmlhttp.Open "Get", "http://hi.baidu.com/"&username(i)&"/profile", True
+	        end if
+	        xmlhttp.Send
+	      wscript.sleep 1000
+	next
+next
+msgbox("OK")
+</script>
+</job>

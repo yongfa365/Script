@@ -1,0 +1,39 @@
+<job id="文件属性查看修改">
+<script language="VBScript">
+'**************************************************************
+'文件属性查看修改.wsf  [written by xlez]
+'date: 2006-9-7
+'**************************************************************
+function prompt(a,b)
+dim aa
+aa=InputBox(a,"文件属性查看修改程序！",b)
+if aa<>"" then
+ prompt=aa
+else
+ prompt=""
+end if
+end function
+</script>
+<script language="JavaScript">
+fso = new ActiveXObject("Scripting.FileSystemObject");
+att=str=''
+stat=folders='可以通过更改数字更改文件或文件夹属性，达到隐藏文件的目的！\n\n'
+stat+='普通文件属性:\t32\n只读属性:\t33\n隐藏属性:\t34\n只读+隐藏属性:\t35\n'
+    +'系统属性:\t36\n系统+隐藏属性:\t38\n系统+只读+隐藏:\t39\n'
+folders+='普通文件夹属性:\t16\n只读属性:\t17\n隐藏属性:\t18\n只读+隐藏属性:\t19\n'
+    +'系统属性:\t20\n系统+隐藏属性:\t22\n系统+只读+隐藏:\t23\n'
+if(WScript.Arguments.length>0)   path=WScript.Arguments(0)
+else path=prompt('输入文件夹或文件路径','')
+if(fso.folderExists(path))
+{att=fso.getFolder(path).attributes
+ str=prompt(folders+'\n[本文件夹属性:\t'+att+']\n'+path,att)
+ if(/^\d{1,2}$/.test(str) && att.toString()!=str){fso.getFolder(path).attributes=str}
+}
+if(fso.fileExists(path))
+{att=fso.getFile(path).attributes
+ str=prompt(stat+'\n[本文件属性:\t'+att+']\n'+path,att)
+ if(/^\d{1,2}$/.test(str) && att.toString()!=str){fso.getFile(path).attributes=str}
+}
+
+</script>
+</job>
